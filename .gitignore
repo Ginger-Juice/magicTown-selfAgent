@@ -5,10 +5,12 @@ dist
 # environment secrets (backend graft adds .env — never commit)
 .env
 .env.*
+!.env.example
 # Environment variables
 .env.local
 .env.*.local
 # Database
+.data/
 *.db
 *.sqlite
 *.sqlite3
@@ -23,3 +25,5 @@ coverage/
 .nyc_output/
 # Logs
 *.log
+# generated art previews (pipeline output)
+assets/art-preview/*

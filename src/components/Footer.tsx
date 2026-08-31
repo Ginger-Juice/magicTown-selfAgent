@@ -13,6 +13,7 @@ const EXPLORE = [
   { to: '/windbell-isle', labelKey: 'nav.isle' },
   { to: '/journal', labelKey: 'nav.journal' },
   { to: '/visit', labelKey: 'nav.visit' },
+  { to: '/agents', labelKey: 'nav.agents' },
 ];
 
 const TOP_LANDMARKS = ['town-hall', 'theater', 'coffee', 'radio', 'windbell-isle'];

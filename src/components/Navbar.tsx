@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink } from 'react-router';
 import { motion } from 'framer-motion';
-import { Sun, Sunset, Moon, Shell, VolumeX } from 'lucide-react';
+import { Sun, Sunset, Moon, Shell, VolumeX, UserRound } from 'lucide-react';
 import { useTown } from '@/lib/town';
 import type { TimeOfDay } from '@/lib/town';
 import { useLanguage } from '@/lib/i18n';
 import type { Language } from '@/lib/i18n';
+import { useAuth } from '@/providers/auth';
 import { playChime } from '@/lib/sound';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +15,7 @@ const LINKS = [
   { to: '/windbell-isle', labelKey: 'nav.isle' },
   { to: '/journal', labelKey: 'nav.journal' },
   { to: '/visit', labelKey: 'nav.visit' },
+  { to: '/agents', labelKey: 'nav.agents' },
 ];
 
 const TIMES: { id: TimeOfDay; icon: typeof Sun; labelKey: string }[] = [
@@ -33,6 +35,7 @@ const pill =
 export default function Navbar() {
   const { time, setTime, soundOn, toggleSound, mapDetailOpen } = useTown();
   const { lang, setLang, t } = useLanguage();
+  const { user, logout } = useAuth();
   const [hidden, setHidden] = useState(false);
   const lastY = useRef(0);
 
@@ -102,8 +105,27 @@ export default function Navbar() {
         ))}
       </nav>
 
-      {/* right: language + time + sound pill */}
+      {/* right: language + time + sound + auth pill */}
       <div className={cn(pill, 'pointer-events-auto col-start-3 w-fit justify-self-end gap-1 px-1.5 py-1 sm:gap-2 sm:px-2 sm:py-1.5')}>
+        {user ? (
+          <button
+            type="button"
+            title={t('nav.signOut')}
+            onClick={() => void logout()}
+            className="max-w-[5.5rem] truncate rounded-full bg-white/70 px-2 py-1 text-[0.68rem] font-extrabold text-ink sm:max-w-[7rem] sm:px-2.5 sm:text-[0.72rem]"
+          >
+            {user.displayName}
+          </button>
+        ) : (
+          <Link
+            to="/login"
+            title={t('nav.signIn')}
+            className="flex h-7 items-center gap-1 rounded-full px-1.5 text-[0.72rem] font-extrabold text-ink-soft transition-all hover:bg-white sm:h-8 sm:px-2"
+          >
+            <UserRound className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">{t('nav.signIn')}</span>
+          </Link>
+        )}
         <div role="group" aria-label={t('nav.language')} className="flex items-center gap-0.5 rounded-full bg-white/60 p-0.5 sm:gap-1 sm:p-1">
           {LANGS.map((l) => {
             const active = lang === l.id;
