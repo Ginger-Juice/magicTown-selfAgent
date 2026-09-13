@@ -3,6 +3,7 @@ import { conversations, messages, users } from "@db/schema";
 import { getDb } from "../../queries/connection";
 import { LIMITS } from "../limits";
 import { loadDefinition } from "../registry";
+import { archiveIdlePending } from "../hooks/divination";
 import { renderForDistill, type StoredMessage } from "../transcript";
 import { resolveBuiltinProvider } from "../providers/builtin";
 import * as store from "./store";
@@ -18,12 +19,22 @@ const COMPRESS_PROMPT = `你在压缩一段对话，供之后继续对话时参�
 只写事实与已达成的结论，不要评论，不要重复寒暄。
 控制在 200 字以内，用陈述句，一行一件事。`;
 
-const DISTILL_PROMPT = (definition: AgentDefinition) => `你是${definition.name}。
+const DISTILL_PROMPT = (definition: AgentDefinition) => {
+  const extra =
+    definition.kind === "divination"
+      ? [
+          "这是魔法小屋的对话。每次占卜已经单独归档（牌面、解读、反馈），USER 部分不要再复述某次抽牌。",
+          "只记访客稳定的偏好，比如喜欢哪种牌阵、不爱听太凶的说法。占卜不是事实，不要写成铁律口吻。",
+        ].join("\n")
+      : "";
+  return `你是${definition.name}。
 刚结束一次与访客的对话。请分两部分回答，各自另起一行，没有内容就写「无」。
+${extra}
 
 USER: 关于这位访客的、下次仍然成立的偏好或事实，最多 3 条，每条一行，以「- 」开头。
 SELF: 关于你这门手艺的通用经验，最多 2 条，每条一行，以「- 」开头。
 SELF 部分绝对不能出现访客的姓名、称呼、联系方式或任何具体日期——写成对任何访客都成立的说法。`;
+};
 
 async function complete(provider: Provider, system: string, user: string): Promise<string> {
   let text = "";
@@ -146,6 +157,15 @@ export async function distillConversation(input: {
     loadDefinition(convo.agentId),
     db.query.users.findFirst({ where: eq(users.id, convo.userId) }),
   ]);
+
+  if (definition.kind === "divination") {
+    try {
+      await archiveIdlePending(convo.id, convo.userId);
+    } catch (err) {
+      console.error("[distill] leftover reading archive failed", err);
+    }
+  }
+
   const provider = input.provider ?? resolveBuiltinProvider();
 
   let parsed: DistilledLines;

@@ -133,7 +133,8 @@ export type SystemNoteKind =
   | "memory_proposal"
   | "void_ball"
   | "delegation_sent"
-  | "notice";
+  | "notice"
+  | "tool_trace";
 
 /**
  * Side channel from the runtime back to the caller. The caller persists these
@@ -152,6 +153,9 @@ export type TraceEntry = {
   allowed: boolean;
   reason?: string;
   ms: number;
+  callId?: string;
+  args?: unknown;
+  result?: unknown;
 };
 
 export type RunRequest = {
@@ -176,6 +180,8 @@ export type RunContext = {
   definition: AgentDefinition;
   user: RunUser;
   conversationId: number | null;
+  /** The visitor line that started this turn. */
+  userMessage: string;
   depth: number;
   runId: number | null;
   provider: Provider;
@@ -192,6 +198,13 @@ export type RunContext = {
   toolCallCount: number;
   realActions: string[];
   envelopesCreated: number;
+  /** Tests inject this so the loop can be traced without a database. */
+  recordToolEvent?(event: {
+    type: "tool/call" | "tool/result";
+    callId: string;
+    step: number;
+    payload: Record<string, unknown>;
+  }): Promise<void>;
 };
 
 export type RunResult = {

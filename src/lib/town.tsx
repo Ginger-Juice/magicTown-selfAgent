@@ -37,7 +37,7 @@ function readTime(): TimeOfDay {
   } catch {
     /* ignore */
   }
-  return 'day';
+  return 'starlight';
 }
 
 function readStamps(): string[] {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink } from 'react-router';
 import { motion } from 'framer-motion';
-import { Sun, Sunset, Moon, Shell, VolumeX, UserRound } from 'lucide-react';
+import { Sun, Sunset, Moon, Sparkles, VolumeX, UserRound } from 'lucide-react';
 import { useTown } from '@/lib/town';
 import type { TimeOfDay } from '@/lib/town';
 import { useLanguage } from '@/lib/i18n';
@@ -30,7 +30,7 @@ const LANGS: { id: Language; label: string; shortLabel: string }[] = [
 ];
 
 const pill =
-  'flex items-center gap-2 rounded-full border-[3px] border-white bg-[rgba(255,249,239,0.75)] shadow-sticker backdrop-blur-[12px]';
+  'flex items-center gap-2 rounded-full border-[3px] border-[#e8b84a]/80 bg-[rgba(243,230,200,0.88)] shadow-sticker backdrop-blur-[12px]';
 
 export default function Navbar() {
   const { time, setTime, soundOn, toggleSound, mapDetailOpen } = useTown();
@@ -72,7 +72,7 @@ export default function Navbar() {
           'pointer-events-auto col-start-1 w-fit max-w-[9.5rem] justify-self-start px-3 py-2 pr-4 sm:max-w-none sm:px-4',
         )}
       >
-        <img src="/logo.svg" alt={t('nav.logoAlt')} className="h-8 w-8 shrink-0 sm:h-9 sm:w-9" />
+        <img src="/logo.svg?v=magic" alt={t('nav.logoAlt')} className="h-8 w-8 shrink-0 sm:h-9 sm:w-9" />
         <span className="font-display text-[0.82rem] font-semibold leading-[1.1] tracking-tight text-ink sm:whitespace-nowrap sm:text-lg">
           {t('nav.brand')}
         </span>
@@ -178,10 +178,10 @@ export default function Navbar() {
           }}
           className={cn(
             'flex h-8 w-8 items-center justify-center rounded-full transition-all duration-300 ease-squash sm:ml-1 sm:h-9 sm:w-9',
-            soundOn ? 'bg-seafoam text-ink' : 'text-ink-soft hover:bg-white',
+            soundOn ? 'bg-butter text-ink' : 'text-ink-soft hover:bg-white',
           )}
         >
-          {soundOn ? <Shell className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          {soundOn ? <Sparkles className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
         </button>
       </div>
     </motion.header>

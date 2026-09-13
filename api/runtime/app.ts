@@ -3,7 +3,9 @@ import { ToolRegistry } from "./tools/registry";
 import { TOWN_TOOLS } from "./tools/town";
 import { MEMORY_TOOLS } from "./tools/memory";
 import { A2A_TOOLS } from "./tools/a2a";
-import type { Hook } from "./hooks";
+import { HANDS_TOOLS } from "./tools/hands";
+import { HANDS_TOOL_IDS, mayUseHands } from "./workspace";
+import { divinationArchiveHook, type Hook } from "./hooks";
 import type { AgentDefinition, ToolSpec } from "./types";
 
 /**
@@ -22,18 +24,19 @@ const ALWAYS_ON_TOOLS = [
   "list_town",
 ];
 
-const registry = new ToolRegistry().register(...TOWN_TOOLS, ...MEMORY_TOOLS, ...A2A_TOOLS);
+const registry = new ToolRegistry().register(...TOWN_TOOLS, ...MEMORY_TOOLS, ...A2A_TOOLS, ...HANDS_TOOLS);
 
 export function townToolRegistry(): ToolRegistry {
   return registry;
 }
 
 export function toolsFor(definition: AgentDefinition): ToolSpec[] {
-  return registry.resolve(definition.toolIds, ALWAYS_ON_TOOLS);
+  const extra = mayUseHands(definition) ? [...HANDS_TOOL_IDS] : [];
+  return registry.resolve(definition.toolIds, [...ALWAYS_ON_TOOLS, ...extra]);
 }
 
 function townHooks(): Hook[] {
-  return [];
+  return [divinationArchiveHook];
 }
 
 let cached: Runtime | null = null;
@@ -54,4 +57,10 @@ function buildDeps(): RuntimeDeps {
 /** Exposed for tests and for hot reload in dev. */
 export function resetTownRuntime(): void {
   cached = null;
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    resetTownRuntime();
+  });
 }

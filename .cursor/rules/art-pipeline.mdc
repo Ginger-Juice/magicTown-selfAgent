@@ -1,0 +1,11 @@
+---
+description: Town art — Google generates, Cursor punches cutouts
+alwaysApply: true
+---
+
+# Art pipeline
+
+- **出图**：只用 `scripts/art/generate.mjs`（Google Gemini，`GOOGLE_API_KEY`）。默认 `gemini-3.1-flash-lite-image`。写到 `assets/art-preview/`，不要覆盖 `public/`。
+- **抠图**：Google 出图之后，在本机 flood-fill 去底（`npm run art:punch -- --ids …`），再拷到 `public/`。不要用 Cursor GenerateImage 出整张新图，也不要用全局近黑阈值（会啃掉深色屋顶和砖墙）。
+- Google 若 429 / 额度空了：停下来说明，不要改用 Cursor 出图顶上。
+- 等距建筑：墙和烟囱必须竖直。只改世界空间朝向（yaw），禁止对整张 PNG 做 2D 旋转。

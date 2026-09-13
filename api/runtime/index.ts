@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { agentRuns, users } from "@db/schema";
 import { getDb } from "../queries/connection";
+import { raceAbort, throwIfAborted } from "./abort";
 import { agentBusy, RuntimeError } from "./errors";
 import { LIMITS } from "./limits";
 import { runLoop } from "./loop";
@@ -34,9 +35,15 @@ function isDuplicateKey(err: unknown): boolean {
  * preference does the agent's own kind get to pick — otherwise picking a model
  * in the rune workshop would silently do nothing.
  */
-function resolveProvider(definition: AgentDefinition, model?: string | null): Provider {
-  if (!model && definition.provider === "cursor") {
-    const cursor = resolveCursorProvider(definition);
+function resolveProvider(
+  definition: AgentDefinition,
+  model: string | null | undefined,
+  ctx: RunContext,
+): Provider {
+  // A configured rune workshop stays on Cursor even if the chat pinned a
+  // catalog model — that pin is for builtin vendors, not a demotion.
+  if (definition.provider === "cursor") {
+    const cursor = resolveCursorProvider(definition, ctx);
     if (cursor) return cursor;
   }
   return resolveBuiltinProvider(model);
@@ -115,7 +122,7 @@ export async function reapStaleLock(agentId: number, userId: number): Promise<bo
     where: and(eq(agentRuns.lockKey, `${agentId}:${userId}`), eq(agentRuns.status, "running")),
   });
   if (!stale) return false;
-  if (Date.now() - stale.startedAt.getTime() < LIMITS.wallClockMs * 2) return false;
+  if (Date.now() - stale.startedAt.getTime() < LIMITS.wallClockMs) return false;
   await releaseRun(stale.id, { status: "failed", error: "abandoned" });
   return true;
 }
@@ -168,9 +175,10 @@ export function createRuntime(deps: RuntimeDeps = {}): Runtime {
         definition,
         user,
         conversationId: request.conversationId,
+        userMessage: request.userMessage,
         depth,
         runId,
-        provider: deps.provider ?? resolveProvider(definition, request.model),
+        provider: deps.provider ?? resolveBuiltinProvider(request.model),
         signal: controller.signal,
         startedAt: Date.now(),
         memoryBlocks: { self: "", user: "" },
@@ -181,44 +189,66 @@ export function createRuntime(deps: RuntimeDeps = {}): Runtime {
         realActions: [],
         envelopesCreated: 0,
       };
+      if (!deps.provider) ctx.provider = resolveProvider(definition, request.model, ctx);
 
       const hooks = buildHooks(deps.hooks ?? []);
+      let released = false;
+      const finish = async (patch: {
+        status: "done" | "failed";
+        steps?: number;
+        inputTokens?: number;
+        outputTokens?: number;
+        trace?: unknown;
+        error?: string;
+      }) => {
+        if (released) return;
+        released = true;
+        await releaseRun(runId, patch);
+      };
 
       try {
-        await hooks.beforeTurn(ctx);
+        const outcome = await raceAbort(
+          (async () => {
+            await hooks.beforeTurn(ctx);
 
-        const history = request.conversationId
-          ? await loadTranscript(request.conversationId)
-          : { messages: [] as ModelMessage[], overflow: [], total: 0 };
+            const history = request.conversationId
+              ? await loadTranscript(request.conversationId)
+              : { messages: [] as ModelMessage[], overflow: [], total: 0 };
 
-        const messages = withSessionSummary(ctx.sessionSummary, history.messages);
-        const system = buildSystemPrompt({
-          definition,
-          userMessage: request.userMessage,
-          memoryBlocks: ctx.memoryBlocks,
-        });
+            const messages = withSessionSummary(ctx.sessionSummary, history.messages);
+            const system = buildSystemPrompt({
+              definition,
+              userMessage: request.userMessage,
+              memoryBlocks: ctx.memoryBlocks,
+            });
 
-        const outcome = await runLoop({
-          ctx,
-          hooks,
-          tools: deps.tools?.(definition) ?? [],
-          system,
-          messages,
-        });
+            const loopOutcome = await runLoop({
+              ctx,
+              hooks,
+              tools: deps.tools?.(definition) ?? [],
+              system,
+              messages,
+            });
 
-        await hooks.afterTurn(ctx, outcome.finalText);
+            throwIfAborted(controller.signal);
+            await hooks.afterTurn(ctx, loopOutcome.finalText);
 
-        // Lazy rolling compression: only pays the extra model call on the turn
-        // that actually pushed messages out of the window.
-        if (request.conversationId && history.overflow.length) {
-          void compressSession({
-            conversationId: request.conversationId,
-            userId: user.id,
-            overflow: history.overflow,
-          });
-        }
+            // Lazy rolling compression: only pays the extra model call on the turn
+            // that actually pushed messages out of the window.
+            if (request.conversationId && history.overflow.length) {
+              void compressSession({
+                conversationId: request.conversationId,
+                userId: user.id,
+                overflow: history.overflow,
+              });
+            }
 
-        await releaseRun(runId, {
+            return loopOutcome;
+          })(),
+          controller.signal,
+        );
+
+        await finish({
           status: "done",
           steps: outcome.steps,
           inputTokens: outcome.usage.inputTokens,
@@ -238,7 +268,7 @@ export function createRuntime(deps: RuntimeDeps = {}): Runtime {
         };
       } catch (err) {
         await hooks.onError(ctx, err);
-        await releaseRun(runId, {
+        await finish({
           status: "failed",
           steps: ctx.trace.length,
           trace: ctx.trace,

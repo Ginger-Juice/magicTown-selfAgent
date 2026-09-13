@@ -8,11 +8,17 @@ export const STYLE = [
 ].join(" ");
 
 export const CUTOUT =
-  "Single isolated building, full body visible, centered, small contact shadow under the footprint only. Solid flat black background (#000000), no ground plane, no grass, no night sky, no other buildings. Isometric 2.5D camera matching the attached town map.";
+  "Single isolated building, full body visible, centered, small contact shadow under the footprint only. Solid flat black background (#000000), no ground plane, no grass, no night sky, no other buildings.";
+
+export const CUTOUT_FROM_MAP = [
+  "Match the attached town map: same 3/4 isometric camera (not a flatter product shot), same clay-3D dusk lighting, same warm window glow.",
+  "Extract ONE landmark exactly as it sits in that painting — same silhouette, same roof pitch, same materials. Do not invent a new design, do not rotate, do not flatten to a front elevation.",
+].join(" ");
 
 export const FROM_MAP = [
-  "Use the attached painted town map as the ONLY layout and style reference: dusk navy sky, crescent moon, clay-like 3D, cobble plaza, winding river, stone bridge, pond with a small dock, rolling dark hills, warm lanterns.",
-  "Keep the same camera angle, proportions, and lighting. Do not invent a new valley.",
+  "The attached painted town map is the ONLY reference. Match it as an in-place edit of the SAME SHOT.",
+  "Lock camera: identical 3/4 isometric angle, identical framing, identical horizon line, identical crescent-moon position. Do not tilt, do not zoom out, do not rotate, do not pull the camera back.",
+  "Keep dusk navy sky, cobble plaza, winding river, stone bridge, pond with a small dock, rolling dark hills, warm lanterns.",
 ].join(" ");
 
 export const SCENE =
@@ -28,6 +34,15 @@ export const TERRAIN = [
   "No grass, flowers, or trees ON the pads. Soft moss and hedges only between pads.",
   "Cluster pads into districts: 8 town-square lots, 6 east-hill terrace lots, 5 south-promenade quay lots, 4 north-ridge lots, 6 west-island campus courtyards, plus 3–5 spare hinterland lots.",
   "Connect pads with cobble lanes. Still NO buildings, NO towers, NO houses, NO boats with cabins, NO people.",
+].join(" ");
+
+/** Pad the original map-full: more woods/water, buildings locked. */
+export const ENV_PAD = [
+  "OUTPAINT the blurred margins of the attached image into finished environment. The sharp town is FINAL — do not redraw, move, or restyle any building.",
+  "Paint NEW seamless environment that continues naturally from the town edges, same clay-3D dusk brush, same tree shapes, same dusk lighting. Do not tile or copy-paste strips.",
+  "LEFT margin: continue the same dusk valley — rounded night trees, distant hills, a little more dark grass. No new buildings, no extra cottages, no ruins.",
+  "RIGHT / BOTTOM / TOP: keep the existing woods, pond, dock, and sky continuous; only fill leftover blur. Only ONE crescent moon.",
+  "No autumn trees, no parchment border, no UI. Seamless blending with the town edges.",
 ].join(" ");
 
 /** For finished town views: keep layout, vary the buildings. */
@@ -48,6 +63,7 @@ export const VARIETY = [
  * @property {number} width
  * @property {number} height
  * @property {boolean} transparent
+ * @property {string} [imageSize]
  * @property {string} prompt
  */
 
@@ -57,10 +73,11 @@ export const CATALOG = [
     id: "map-base-ext",
     file: "map-base-ext.png",
     kind: "terrain",
-    width: 3600,
-    height: 2520,
+    width: 2400,
+    height: 1792,
     transparent: false,
-    prompt: `${STYLE} ${FROM_MAP} Edit the attached map into TERRAIN ONLY. Remove every building, tower, house, chimney stack, person, and cabin boat. Keep hills, river, pond, dock, cobble plaza, dirt paths, trees, lantern posts, moon and sky. Where each building stood, leave a clean empty HARD PAD (flagstone or cobble) matching that footprint, no grass on the pad. Same dusk. No parchment frame, no UI, no readable text.`,
+    imageSize: "2K",
+    prompt: `${STYLE} ${FROM_MAP} IN-PLACE EDIT of the attached map into TERRAIN ONLY. Keep the same sky, moon, hills, trees, river, pond, docks, lantern posts, cobble plaza and paths. Remove every building, tower, house, chimney, copper dome, glasshouse, and outdoor cafe furniture. Where each building stood, leave a clean empty HARD PAD (flagstone or cobble) matching that exact footprint and shape. No grass on the pads. Do not add extra pads. Do not zoom out or reframe. No parchment, no UI, no readable text.`,
   },
   {
     id: "map-base",
@@ -82,13 +99,44 @@ export const CATALOG = [
   },
 
   {
+    id: "map-full-a",
+    file: "map-full-a.png",
+    kind: "terrain",
+    width: 1480,
+    height: 980,
+    transparent: false,
+    imageSize: "2K",
+    prompt: `${STYLE} ${ENV_PAD}`,
+  },
+  {
+    id: "map-full-b",
+    file: "map-full-b.png",
+    kind: "terrain",
+    width: 1480,
+    height: 980,
+    transparent: false,
+    imageSize: "2K",
+    prompt: `${STYLE} ${ENV_PAD}`,
+  },
+  {
+    id: "map-full-c",
+    file: "map-full-c.png",
+    kind: "terrain",
+    width: 1480,
+    height: 980,
+    transparent: false,
+    imageSize: "2K",
+    prompt: `${STYLE} ${ENV_PAD}`,
+  },
+
+  {
     id: "b-townhall",
     file: "b-townhall.png",
     kind: "cutout",
     width: 1024,
     height: 1024,
     transparent: true,
-    prompt: `${STYLE} ${CUTOUT} ${FROM_MAP} Recreate the civic hall from the reference: pale stone, central gable or clock, slightly grand, mixed roof (slate or copper trim), warm windows. One building only. Not a castle.`,
+    prompt: `${STYLE} ${CUTOUT} ${CUTOUT_FROM_MAP} The large reddish-brown timber civic hall WITH CLOCK TOWER sitting just ABOVE the central cobble plaza. Steep blue-grey shingles, warm windows, half-timber. One building only. Not a castle, not the copper-dome workshop.`,
   },
   {
     id: "b-theater",
@@ -97,7 +145,7 @@ export const CATALOG = [
     width: 1024,
     height: 1024,
     transparent: true,
-    prompt: `${STYLE} ${CUTOUT} Open-air lakeside theater carved into a giant scallop shell, tiered peach-and-mint seating, small crescent-moon stage prop, fairy lights on white posts.`,
+    prompt: `${STYLE} ${CUTOUT} Match the attached map's clay-3D dusk lighting and 3/4 isometric camera. The olive-green timber hall with a terracotta red-tile roof and a semicircular wooden stage-porch. ROTATE the building so the MAIN ENTRANCE and curved deck face BOTTOM-RIGHT of the frame (toward the southeast). Do not leave the porch facing bottom-left. One building only. Solid flat black background.`,
   },
   {
     id: "b-livehouse",
@@ -106,7 +154,7 @@ export const CATALOG = [
     width: 1024,
     height: 1024,
     transparent: true,
-    prompt: `${STYLE} ${CUTOUT} ${FROM_MAP} Recreate the timber-framed tavern from the reference: plaster and beams, thatch or clay-tile roof, honey windows, barrels by the door, chimney smoke. One building only.`,
+    prompt: `${STYLE} ${CUTOUT} ${CUTOUT_FROM_MAP} The circular stone workshop-tavern at the BOTTOM of the central plaza: large copper dome, smoking chimney, outdoor round tables, warm windows. One building only. Not the clock hall, not a timber cottage.`,
   },
   {
     id: "b-store",
@@ -115,7 +163,7 @@ export const CATALOG = [
     width: 1024,
     height: 1024,
     transparent: true,
-    prompt: `${STYLE} ${CUTOUT} Crooked apothecary named by look not letters: leaning timber shop, jars and cauldrons in windows, one black shop cat on a crate, a single mysterious key over the door.`,
+    prompt: `${STYLE} ${CUTOUT} ${CUTOUT_FROM_MAP} The unique cottage on the RIGHT of the plaza with a rounded beehive thatched roof and a tiny glass sunroom on the front. Shop-like, warm windows. One building only.`,
   },
   {
     id: "b-gallery",
@@ -124,7 +172,7 @@ export const CATALOG = [
     width: 1024,
     height: 1024,
     transparent: true,
-    prompt: `${STYLE} ${CUTOUT} Stacked pink-stone cube gallery, tall windows with framed portraits faintly visible inside, photogenic staircase on the side.`,
+    prompt: `${STYLE} ${CUTOUT} ${CUTOUT_FROM_MAP} Extract the NARROW pale-yellow / cream townhouse from the RIGHT-SIDE residential row (yellow, then blue, then grey houses). Steep gable, timber or plaster walls, many small glowing windows. Keep the painted facing and roof pitch. One slim house only — not the greenhouse, not the thatched shop.`,
   },
   {
     id: "b-coffee",
@@ -133,7 +181,7 @@ export const CATALOG = [
     width: 1024,
     height: 1024,
     transparent: true,
-    prompt: `${STYLE} ${CUTOUT} Cauldron-bottom tea house shaped like a plump cup or kettle, steam, terrace umbrellas, soft cream and copper.`,
+    prompt: `${STYLE} ${CUTOUT} ${CUTOUT_FROM_MAP} Extract the cream house with the complex multi-layered yellow-tiled roof and several chimneys, sitting just RIGHT of the central clock hall, with a small outdoor terrace. Keep the painted facing, roof stack, and materials. Cozy tea-house. One building only — not the copper-dome tavern, not the greenhouse.`,
   },
   {
     id: "b-radio",
@@ -142,7 +190,7 @@ export const CATALOG = [
     width: 1024,
     height: 1024,
     transparent: true,
-    prompt: `${STYLE} ${CUTOUT} Owl Wireless hut: butter-yellow cabin, candy-striped broadcasting tower, owl perches, glowing beacon when a request is on air.`,
+    prompt: `${STYLE} ${CUTOUT} ${CUTOUT_FROM_MAP} The cylindrical stone turret with a copper onion-bulb dome in the LEFT cluster of tall houses. One tower only. Not the spiral-stair tower.`,
   },
   {
     id: "b-library",
@@ -151,7 +199,7 @@ export const CATALOG = [
     width: 1024,
     height: 1024,
     transparent: true,
-    prompt: `${STYLE} ${CUTOUT} Forbidden-book tower built like a stack of giant tomes, weather vane, top-floor windows shuttered with iron lattice.`,
+    prompt: `${STYLE} ${CUTOUT} ${CUTOUT_FROM_MAP} The tall dark jagged timber tower with a sharp gothic spire, standing LEFT of the spiral-stair tower behind the clock hall. One tower only.`,
   },
   {
     id: "b-designlab",
@@ -160,7 +208,16 @@ export const CATALOG = [
     width: 1024,
     height: 1024,
     transparent: true,
-    prompt: `${STYLE} ${CUTOUT} Rune workshop with glass roof, floating paper charms, a ring of carved runes, pencil-shaving warmth, salt air.`,
+    prompt: `${STYLE} ${CUTOUT} ${CUTOUT_FROM_MAP} From the attached map, extract the glass greenhouse / conservatory on the RIGHT of the town: brick or pink-stone base, large faceted glass roof, warm interior glow. Keep the same isometric facing as painted. One building only — keep the attached-workshop look, not a palace of glass.`,
+  },
+  {
+    id: "b-gallery-lab",
+    file: "b-gallery-lab.png",
+    kind: "cutout",
+    width: 1024,
+    height: 1024,
+    transparent: true,
+    prompt: `${STYLE} ${CUTOUT} ${CUTOUT_FROM_MAP} Extract the RIGHT-SIDE row as ONE cluster: yellow house, blue-grey house, cream Dutch stepped-gable, plus the attached brick glasshouse behind them. Exact painted facing. Isolated cutout, black background.`,
   },
   {
     id: "b-apple",
@@ -169,7 +226,7 @@ export const CATALOG = [
     width: 1024,
     height: 1024,
     transparent: true,
-    prompt: `${STYLE} ${CUTOUT} Herb-cottage with a round orchard-red roof like an apple, greenhouse lean-to, hanging herb bundles, one large leaf on the roof.`,
+    prompt: `${STYLE} ${CUTOUT} ${CUTOUT_FROM_MAP} The blue-grey two-story cottage with two brick chimneys and steep dark gables, BOTTOM-RIGHT of the plaza, ivy on the wall. One building only.`,
   },
   {
     id: "b-magic",
@@ -178,7 +235,7 @@ export const CATALOG = [
     width: 1024,
     height: 1024,
     transparent: true,
-    prompt: `${STYLE} ${CUTOUT} ${FROM_MAP} Recreate the round stone tower with a conical copper roof and a small wooden balcony from the reference. One tower only, full body, black background.`,
+    prompt: `${STYLE} ${CUTOUT} ${CUTOUT_FROM_MAP} The cylindrical stone tower with an EXTERNAL WOODEN SPIRAL STAIRCASE and conical copper roof, sitting BEHIND the clock hall (not the far-right bridged tower). One tower only.`,
   },
   {
     id: "b-hotel",
@@ -187,7 +244,7 @@ export const CATALOG = [
     width: 1024,
     height: 1024,
     transparent: true,
-    prompt: `${STYLE} ${CUTOUT} Mist-harbor inn, tiered peach terraces, every balcony facing the lake, star-shaped potion pool on a terrace.`,
+    prompt: `${STYLE} ${CUTOUT} Sandstone gothic hall with tall glowing pointed-arch windows and a short stone-arch bridge stub extending from the RIGHT side toward a circular tower. Isolated hall only, black background.`,
   },
   {
     id: "b-villas",
@@ -196,7 +253,7 @@ export const CATALOG = [
     width: 1024,
     height: 1024,
     transparent: true,
-    prompt: `${STYLE} ${CUTOUT} Three sister wizard houses sharing one garden: mint, lilac, and butter facades, one lemon-like potion tree, bunting between roofs.`,
+    prompt: `${STYLE} ${CUTOUT} ${CUTOUT_FROM_MAP} From the attached map, extract the LEFT-SIDE ROW of three tall timber-framed sister houses with steep dark gables and ivy (the cluster above the olive-green hall). Keep the EXACT painted facing and roof direction — do not mirror, do not rotate. Three distinct houses sharing one garden, not one merged manor.`,
   },
   {
     id: "i-pavilion",
@@ -205,7 +262,7 @@ export const CATALOG = [
     width: 1024,
     height: 1024,
     transparent: true,
-    prompt: `${STYLE} ${CUTOUT} School great-hall exterior on an island: long stone hall, tall windows, slate roof, no castle sprawl, one lanterned entrance.`,
+    prompt: `${STYLE} ${CUTOUT} Circular stone tower with a conical copper roof on a small round cobble pad. Isolated tower only — no bridge, no walkway, no other buildings. Black background.`,
   },
   {
     id: "i-lighthouse",
@@ -215,6 +272,15 @@ export const CATALOG = [
     height: 1536,
     transparent: true,
     prompt: `${STYLE} Isolated tall astronomy tower, portrait 2:3, solid black background. Spiral windows, bronze dome, faint beam. Isometric, no other buildings.`,
+  },
+  {
+    id: "prop-hall-bridge",
+    file: "prop-hall-bridge.png",
+    kind: "prop",
+    width: 1024,
+    height: 1024,
+    transparent: true,
+    prompt: `${STYLE} Isolated 3-arch stone footbridge, isometric, spanning bottom-left to top-right. Warm tan masonry, low parapets, moss at the piers. Solid black background, no buildings.`,
   },
 
   {

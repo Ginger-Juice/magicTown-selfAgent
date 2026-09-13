@@ -1,6 +1,7 @@
 import { createHookBus, type Hook } from "./bus";
 import { defaultGuards } from "./guards";
 import { memoryHook } from "./memory";
+import { divinationArchiveHook } from "./divination";
 import type { HookBus } from "../types";
 
 /**
@@ -13,5 +14,5 @@ export function buildHooks(extra: Hook[] = []): HookBus {
   return createHookBus([...defaultGuards(), ...extra, memoryHook]);
 }
 
-export { createHookBus, defaultGuards, memoryHook };
+export { createHookBus, defaultGuards, memoryHook, divinationArchiveHook };
 export type { Hook };

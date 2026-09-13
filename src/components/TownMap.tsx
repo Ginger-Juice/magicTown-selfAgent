@@ -21,6 +21,7 @@ import { playChime, playStatic } from '@/lib/sound';
 import SparkleField from './SparkleField';
 import DetailCard from './DetailCard';
 import { cn } from '@/lib/utils';
+import { useRecordLandmark } from '@/hooks/useRecordLandmark';
 
 const TOUR_STOPS = ['town-hall', 'radio', 'apple-cottage', 'windbell-isle'];
 
@@ -48,6 +49,7 @@ export default function TownMap({
   openRequest,
   onTourDone,
 }: TownMapProps) {
+  const recordLandmark = useRecordLandmark();
   const stageRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
   const cam = useRef<Cam>({ x: 0, y: 0, s: 0.5 });
@@ -239,13 +241,14 @@ export default function TownMap({
       setSelectedId(lm.id);
       setMapDetailOpen(true);
       setZoomedOnce(true);
+      recordLandmark(lm.id);
       if (soundOn) {
         if (lm.id === 'windbell-isle') playChime();
         if (lm.id === 'radio') playStatic();
       }
       void tweenCam(landmarkCam(lm), 1.1, 'power3.inOut');
     },
-    [touring, selectedId, setMapDetailOpen, tweenCam, landmarkCam, soundOn, onTourDone],
+    [touring, selectedId, setMapDetailOpen, tweenCam, landmarkCam, soundOn, onTourDone, recordLandmark],
   );
 
   const closeLandmark = useCallback(() => {
@@ -261,9 +264,10 @@ export default function TownMap({
     const idx = LANDMARKS.findIndex((l) => l.id === selected.id);
     const next = LANDMARKS[(idx + 1) % LANDMARKS.length];
     setSelectedId(next.id);
+    recordLandmark(next.id);
     if (soundOn && next.id === 'windbell-isle') playChime();
     void tweenCam(landmarkCam(next), 1.1, 'power3.inOut');
-  }, [selected, tweenCam, landmarkCam, soundOn]);
+  }, [selected, tweenCam, landmarkCam, soundOn, recordLandmark]);
 
   /* external open requests (deep links, field notes, pier popover) */
   useEffect(() => {

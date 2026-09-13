@@ -1,116 +1,147 @@
+import { mkdir } from "node:fs/promises";
+import path from "node:path";
+import { raceAbort, throwIfAborted } from "../abort";
 import { LIMITS } from "../limits";
-import type { AgentDefinition } from "../types";
+import { formatTraceNote } from "../trajectory";
+import type { AgentDefinition, RunContext } from "../types";
 import type { Provider, ProviderChunk, ProviderRunInput } from "./types";
+import {
+  cursorStoreRoot,
+  loadCursorAgentId,
+  parseMcpServers,
+  prepareCursorWorkspace,
+  readCursorApiKey,
+  saveCursorAgentId,
+  townBridgeTools,
+} from "./cursor-kit";
 
 const DEFAULT_MODEL = "composer-2.5";
 
-type CursorOptions = {
-  apiKey: string;
-  model: string;
-  cwd: string;
-};
+type SdkModule = typeof import("@cursor/sdk");
 
-/**
- * Reads the per-agent config. The key comes from the agent row rather than
- * global env on purpose: a Cursor key belongs to whoever staffed that agent,
- * and one shared team key driving `local` mode would hand every visitor a
- * shell that auto-approves.
- */
-function readOptions(definition: AgentDefinition): CursorOptions | null {
-  const opts = definition.providerOptions;
-  const apiKey = opts.cursorApiKey;
-  if (typeof apiKey !== "string" || !apiKey.trim()) return null;
-
-  const cwd = typeof opts.cursorCwd === "string" && opts.cursorCwd ? opts.cursorCwd : process.cwd();
-  const model =
-    typeof opts.cursorModel === "string" && opts.cursorModel ? opts.cursorModel : DEFAULT_MODEL;
-
-  return { apiKey: apiKey.trim(), model, cwd };
-}
-
-/**
- * Loaded on first use rather than at import time: the SDK is large, ships its
- * own optional native deps, and is marked external in the API bundle, so a
- * town with no Cursor-staffed agent should never touch it.
- */
-async function loadSdk() {
+async function loadSdk(): Promise<SdkModule> {
   return import("@cursor/sdk");
 }
 
-function flatten(input: ProviderRunInput): string {
-  return [
-    input.system,
-    ...input.messages.map((m) =>
-      m.role === "user"
-        ? `访客：${m.content}`
-        : m.role === "assistant"
-          ? `你：${m.content}`
-          : m.content,
-    ),
-  ]
-    .filter(Boolean)
-    .join("\n\n");
+function latestUserText(ctx: RunContext, input: ProviderRunInput): string {
+  if (ctx.userMessage.trim()) return ctx.userMessage;
+  for (let i = input.messages.length - 1; i >= 0; i--) {
+    const message = input.messages[i];
+    if (message.role === "user" && message.content.trim()) return message.content;
+  }
+  return input.messages.at(-1) && "content" in input.messages.at(-1)!
+    ? String((input.messages.at(-1) as { content: string }).content)
+    : "";
 }
 
-/**
- * A Cursor agent brings its own tools and runs them itself, so this provider
- * never emits `tool_call` — the loop sees one step of text and stops. That is
- * the intended shape: the workshop's tooling is Cursor's, not the town's.
- */
+function pushTraceNote(ctx: RunContext): void {
+  if (!ctx.trace.length) return;
+  if (ctx.notes.some((n) => n.kind === "tool_trace")) return;
+  const note = formatTraceNote(ctx.trace);
+  ctx.notes.push({ kind: "tool_trace", body: note.body, meta: { calls: note.calls } });
+}
+
 async function* streamRun(
-  options: CursorOptions,
+  definition: AgentDefinition,
+  ctx: RunContext,
   input: ProviderRunInput,
 ): AsyncIterable<ProviderChunk> {
-  const { Agent } = await loadSdk();
+  const apiKey = readCursorApiKey(definition);
+  if (!apiKey) {
+    yield { type: "error", message: "cursor_key_missing", retryable: false };
+    return;
+  }
 
-  await using agent = await Agent.create({
-    apiKey: options.apiKey,
-    model: { id: options.model },
-    // Explicit even though it is the default: omitting it silently picks local,
-    // and that is not a thing to discover later.
-    local: { cwd: options.cwd },
-  });
+  const cwd = await prepareCursorWorkspace(ctx);
+  const model =
+    typeof definition.providerOptions.cursorModel === "string" && definition.providerOptions.cursorModel
+      ? definition.providerOptions.cursorModel
+      : DEFAULT_MODEL;
 
-  const run = await agent.send(flatten(input));
+  const { Agent, JsonlLocalAgentStore } = await loadSdk();
+  throwIfAborted(input.signal);
 
-  const abort = () => {
-    if (run.supports("cancel")) void run.cancel();
-  };
-  input.signal?.addEventListener("abort", abort, { once: true });
+  const storeDir = path.join(cursorStoreRoot(ctx.user.id, definition.slug), "store");
+  await mkdir(storeDir, { recursive: true });
+  const mcpServers = parseMcpServers(definition.providerOptions.mcpServers);
+  const createOptions = {
+    apiKey,
+    model: { id: model },
+    systemPrompt: input.system,
+    mcpServers,
+    local: {
+      cwd,
+      settingSources: ["project"] as Array<"project">,
+      customTools: townBridgeTools(ctx),
+      store: new JsonlLocalAgentStore(storeDir),
+      autoReview: true,
+    },
+  } as unknown as Parameters<SdkModule["Agent"]["create"]>[0];
+
+  const savedId = await loadCursorAgentId(ctx.user.id, definition.slug);
+  let agent: Awaited<ReturnType<SdkModule["Agent"]["create"]>>;
+  if (savedId) {
+    try {
+      agent = await raceAbort(Agent.resume(savedId, createOptions), input.signal);
+    } catch {
+      agent = await raceAbort(Agent.create(createOptions), input.signal);
+    }
+  } else {
+    agent = await raceAbort(Agent.create(createOptions), input.signal);
+  }
+
+  await saveCursorAgentId(ctx.user.id, definition.slug, agent.agentId);
 
   try {
-    for await (const event of run.stream()) {
-      if (event.type !== "assistant") continue;
-      for (const block of event.message.content) {
-        if (block.type === "text" && block.text) {
-          yield { type: "text", delta: block.text };
+    const run = await raceAbort(agent.send(latestUserText(ctx, input), { local: { force: true } }), input.signal);
+    const abort = () => {
+      if (run.supports("cancel")) void run.cancel();
+    };
+    input.signal?.addEventListener("abort", abort, { once: true });
+
+    try {
+      for await (const event of run.stream()) {
+        throwIfAborted(input.signal);
+        if (event.type === "assistant") {
+          for (const block of event.message.content) {
+            if (block.type === "text" && block.text) yield { type: "text", delta: block.text };
+          }
+        }
+        if (event.type === "usage" && event.usage) {
+          yield {
+            type: "usage",
+            inputTokens: event.usage.inputTokens ?? 0,
+            outputTokens: event.usage.outputTokens ?? 0,
+          };
         }
       }
-    }
 
-    // A run that started and then failed is a different animal from one that
-    // never started; only the latter throws.
-    const result = await run.wait();
-    if (result.status === "error") {
-      yield { type: "error", message: `cursor run ${result.id} failed`, retryable: false };
+      const result = await raceAbort(run.wait(), input.signal);
+      if (result.status === "error") {
+        yield { type: "error", message: `cursor run ${result.id} failed`, retryable: false };
+      }
+    } finally {
+      input.signal?.removeEventListener("abort", abort);
     }
   } finally {
-    input.signal?.removeEventListener("abort", abort);
+    pushTraceNote(ctx);
+    await agent[Symbol.asyncDispose]();
   }
 }
 
-export function resolveCursorProvider(definition: AgentDefinition): Provider | null {
-  // The rune workshop is the only building wired for this.
+export function resolveCursorProvider(definition: AgentDefinition, ctx?: RunContext): Provider | null {
   if (definition.kind !== "code" || !definition.isTownNative) return null;
-
-  const options = readOptions(definition);
-  if (!options) return null;
+  if (!readCursorApiKey(definition)) return null;
+  if (!ctx) return null;
 
   return {
     id: "cursor",
+    modelId: `cursor:${typeof definition.providerOptions.cursorModel === "string" && definition.providerOptions.cursorModel
+      ? definition.providerOptions.cursorModel
+      : DEFAULT_MODEL}`,
     async *run(input: ProviderRunInput): AsyncIterable<ProviderChunk> {
       try {
-        yield* streamRun(options, {
+        yield* streamRun(definition, ctx, {
           ...input,
           maxOutputTokens: input.maxOutputTokens ?? LIMITS.maxOutputTokens,
         });

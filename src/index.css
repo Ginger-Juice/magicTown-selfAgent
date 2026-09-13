@@ -2,8 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ---- zh display + handwriting webfonts (self-hosted, subset) ---- */
-/* 851 GBai 马克笔体 (by 8:51:22 pm, zh extended by lamda05) — headings */
+/* ---- zh display + handwriting webfonts ----
+   Display: Cinzel (latin, stone-cut gothic) + Noto Serif SC (hanzi, spellbook).
+   Handwriting stays 清松手寫體2. */
 @font-face {
   font-family: 'GBai Marker';
   src: url('/fonts/GBai.woff2') format('woff2');
@@ -22,39 +23,39 @@
 
 @layer base {
   :root {
-    /* ---- Summer Town core tokens (design.md §2) ---- */
-    --cream: #fff9ef;
-    --paper: #fff3df;
-    --sand: #f6e3c2;
-    --ink: #4a4470;
-    --ink-soft: #7b74a3;
-    --ink-faint: rgba(74, 68, 112, 0.1);
+    /* ---- Magic town tokens (dusk navy + lamp gold + copper) ---- */
+    --cream: #f3e6c8;
+    --paper: #efe0b8;
+    --sand: #d4c39a;
+    --ink: #1e2a3a;
+    --ink-soft: #5c6b7a;
+    --ink-faint: rgba(30, 42, 58, 0.1);
 
-    --sky: #cfebf7;
-    --seafoam: #a5e3d8;
-    --lagoon: #7ec8e3;
-    --deep-sea: #5fa8cf;
+    --sky: #3a4a68;
+    --seafoam: #3d5c48;
+    --lagoon: #3a6b8a;
+    --deep-sea: #1e3a52;
 
-    --peach: #ffc9a3;
-    --coral: #ff9b9b;
-    --rose: #ffc3d0;
-    --butter: #ffdd94;
-    --apricot: #ffb37e;
-    --lavender: #c6b6e8;
-    --lilac: #e6ddf7;
-    --mint: #bdebd2;
-    --leaf: #8fd3a8;
+    --peach: #d4a07a;
+    --coral: #c47a3a;
+    --rose: #b8897a;
+    --butter: #e8b84a;
+    --apricot: #d4924a;
+    --lavender: #6e5e8e;
+    --lilac: #c8bdd8;
+    --mint: #5a8a6a;
+    --leaf: #3d5c48;
 
-    /* time-of-day repaintable vars */
-    --sky-top: #cfebf7;
-    --sky-bottom: #a5e3d8;
-    --water: #7ec8e3;
-    --water-deep: #5fa8cf;
-    --world-tint: rgba(255, 179, 126, 0);
-    --window-glow-opacity: 0;
-    --star-opacity: 0;
-    --beam-opacity: 0;
-    --cloud: #ffffff;
+    /* time-of-day: default is cool dusk, not beach pastels */
+    --sky-top: #3a4a68;
+    --sky-bottom: #2a3a4a;
+    --water: #3a6b8a;
+    --water-deep: #1e3a52;
+    --world-tint: rgba(232, 184, 74, 0.06);
+    --window-glow-opacity: 0.45;
+    --star-opacity: 0.2;
+    --beam-opacity: 0.35;
+    --cloud: #8a96a8;
 
     /* shadcn tokens (kept for ui primitives) */
     --background: 0 0% 100%;
@@ -88,27 +89,27 @@
   }
 
   :root[data-time='golden'] {
-    --sky-top: #ffdd94;
-    --sky-bottom: #ff9b9b;
-    --water: #f0a48a;
-    --water-deep: #d98a9a;
-    --world-tint: rgba(255, 179, 126, 0.18);
+    --sky-top: #3d2a48;
+    --sky-bottom: #8a4a3a;
+    --water: #3a5a6a;
+    --water-deep: #1e3a52;
+    --world-tint: rgba(196, 122, 58, 0.22);
     --window-glow-opacity: 1;
-    --star-opacity: 0;
+    --star-opacity: 0.15;
     --beam-opacity: 1;
-    --cloud: #ffe9c9;
+    --cloud: #d4a07a;
   }
 
   :root[data-time='starlight'] {
-    --sky-top: #3e3965;
-    --sky-bottom: #6e5e9e;
-    --water: #4a4470;
-    --water-deep: #5fa8cf;
-    --world-tint: rgba(74, 68, 112, 0.28);
+    --sky-top: #141c2c;
+    --sky-bottom: #243049;
+    --water: #1e3a52;
+    --water-deep: #122030;
+    --world-tint: rgba(27, 36, 56, 0.28);
     --window-glow-opacity: 1;
     --star-opacity: 1;
     --beam-opacity: 1;
-    --cloud: #6e5e9e;
+    --cloud: #3a4a68;
   }
 
   * {
@@ -142,7 +143,9 @@
       cursor: image-set(url('/cursor.png') 1x, url('/cursor@2x.png') 2x) 14 3, pointer;
     }
     input,
-    textarea {
+    textarea,
+    .select-text,
+    [role='dialog'] .chat-md {
       cursor: text;
     }
   }
@@ -157,36 +160,36 @@
   /* sticker card (design.md §4) */
   .sticker-card {
     background: var(--paper);
-    border: 3px solid #ffffff;
+    border: 3px solid var(--butter);
     border-radius: 28px;
     box-shadow:
-      0 12px 32px rgba(74, 68, 112, 0.12),
-      0 3px 0 rgba(74, 68, 112, 0.06);
+      0 12px 32px rgba(30, 42, 58, 0.16),
+      0 3px 0 rgba(30, 42, 58, 0.08);
   }
 
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 font-extrabold text-white;
     background: var(--coral);
-    border: 3px solid #fff;
-    box-shadow: 0 6px 0 rgba(74, 68, 112, 0.15);
+    border: 3px solid var(--cream);
+    box-shadow: 0 6px 0 rgba(30, 42, 58, 0.2);
     transition:
       transform 0.22s cubic-bezier(0.22, 1.2, 0.36, 1),
       box-shadow 0.22s cubic-bezier(0.22, 1.2, 0.36, 1);
   }
   .btn-primary:hover {
     transform: translateY(-3px) scale(1.04) rotate(-1deg);
-    box-shadow: 0 9px 0 rgba(74, 68, 112, 0.15);
+    box-shadow: 0 9px 0 rgba(30, 42, 58, 0.2);
   }
   .btn-primary:active {
     transform: translateY(2px);
-    box-shadow: 0 2px 0 rgba(74, 68, 112, 0.15);
+    box-shadow: 0 2px 0 rgba(30, 42, 58, 0.2);
   }
 
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 font-extrabold;
     background: var(--cream);
     color: var(--ink);
-    border: 2px solid rgba(74, 68, 112, 0.15);
+    border: 2px solid rgba(30, 42, 58, 0.18);
     transition: transform 0.22s cubic-bezier(0.22, 1.2, 0.36, 1);
   }
   .btn-secondary:hover {
@@ -221,6 +224,28 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* Paper-town scrollbar: a short butter pill instead of the OS bar. */
+  .sticker-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--butter) transparent;
+  }
+  .sticker-scroll::-webkit-scrollbar {
+    width: 10px;
+  }
+  .sticker-scroll::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 10px 2px;
+  }
+  .sticker-scroll::-webkit-scrollbar-thumb {
+    background: var(--butter);
+    border: 2px solid var(--paper);
+    border-radius: 999px;
+    box-shadow: 0 1px 0 rgba(30, 42, 58, 0.12);
+  }
+  .sticker-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--coral);
   }
 }
 
@@ -372,15 +397,12 @@
 }
 
 /* ---- footer column headings ---- */
-/* EN: rounded Fredoka bold (body stack renders too thin at this size) */
 footer h3.uppercase {
-  font-family: 'Fredoka', 'Nunito', ui-sans-serif, sans-serif;
+  font-family: 'Cinzel', 'Noto Serif SC', serif;
   font-weight: 700;
 }
-/* zh: GBai marker, noticeably larger than the latin caps size */
 html[lang='zh-CN'] footer h3.uppercase {
-  font-family: 'GBai Marker', 'Fredoka', ui-sans-serif, sans-serif;
-  font-weight: 400;
+  font-weight: 600;
   font-size: 1.1rem;
   letter-spacing: 0.12em;
 }
@@ -390,7 +412,8 @@ html[lang='zh-CN'] footer h3.uppercase {
    point size, so the whole zh experience gets an airier pass:
    - root type scaled to ~0.92x, prose forced to weight 400 with more
      line-height (1.7) and a whisper of letter-spacing
-   - Fredoka display/button/pill styles switch to 851 GBai 马克笔体 (marker)
+   - Display/button/pill styles use Cinzel for latin and Noto Serif SC for
+     hanzi — a stone-cut gothic / grimoire pair with full character coverage
    - Caveat handwriting switches to 清松手寫體2 (JasonHandwriting2), smaller/lighter
    - wish strips (Pavilion) and postcard message/signature (PostcardWall)
      are targeted via their stable class hooks (components are read-only) */
@@ -420,14 +443,13 @@ html[lang='zh-CN'] [role='dialog'] {
   letter-spacing: 0.01em;
 }
 
-/* headings, buttons, pills/labels → 851 GBai 马克笔体 (single weight, no faux bold) */
+/* headings, buttons, pills/labels → Cinzel + 思源宋体 */
 html[lang='zh-CN'] .font-display,
 html[lang='zh-CN'] .btn-primary,
 html[lang='zh-CN'] .btn-secondary,
 html[lang='zh-CN'] .uppercase,
 html[lang='zh-CN'] .kicker {
-  font-family: 'GBai Marker', 'Fredoka', 'Nunito', ui-sans-serif, sans-serif;
-  font-weight: 400;
+  font-family: 'Cinzel', 'Noto Serif SC', serif;
 }
 
 /* wide latin caps tracking reads choppy on hanzi */
@@ -438,7 +460,7 @@ html[lang='zh-CN'] .uppercase {
 html[lang='zh-CN'] .kicker {
   font-size: 1.22rem;
   letter-spacing: 0.08em;
-  font-weight: 400;
+  font-weight: 600;
   line-height: 1.3;
 }
 
@@ -566,4 +588,17 @@ html[lang='zh-CN'] .lg\:columns-3 .font-hand {
 html[lang='zh-CN'] .lg\:columns-3 .text-sm {
   font-family: 'JasonHandwriting2', 'Caveat', cursive;
   font-weight: 400;
+}
+
+/* Chat markdown: town copy stays light, **emphasis** still has to read as bold. */
+.chat-md {
+  overflow-wrap: anywhere;
+}
+.chat-md strong,
+.chat-md b {
+  font-weight: 800;
+}
+html[lang='zh-CN'] .chat-md strong,
+html[lang='zh-CN'] .chat-md b {
+  font-weight: 800;
 }

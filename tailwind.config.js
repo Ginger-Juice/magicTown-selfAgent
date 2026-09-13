@@ -5,7 +5,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        /* Summer Town tokens */
+        /* Magic town tokens (names kept so existing classes keep working) */
         cream: 'var(--cream)',
         paper: 'var(--paper)',
         sand: 'var(--sand)',
@@ -70,7 +70,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        display: ['Fredoka', 'Nunito', 'sans-serif'],
+        display: ['Cinzel', 'Noto Serif SC', 'serif'],
         body: ['Nunito', 'ui-sans-serif', 'sans-serif'],
         hand: ['Caveat', 'JasonHandwriting2', 'cursive'],
       },
@@ -84,8 +84,8 @@ module.exports = {
         xs: "calc(var(--radius) - 6px)",
       },
       boxShadow: {
-        sticker: '0 12px 32px rgba(74,68,112,0.12), 0 3px 0 rgba(74,68,112,0.06)',
-        pop: '0 6px 0 rgba(74,68,112,0.15)',
+        sticker: '0 12px 32px rgba(30,42,58,0.16), 0 3px 0 rgba(30,42,58,0.08)',
+        pop: '0 6px 0 rgba(30,42,58,0.2)',
         xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
       },
       transitionTimingFunction: {

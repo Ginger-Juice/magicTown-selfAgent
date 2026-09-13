@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { createHookBus, type Hook } from "../hooks/bus";
-import { createRepeatGuard, depthGuard, wallClockGuard } from "../hooks/guards";
+import { createRepeatGuard, depthGuard, handsGuard, wallClockGuard } from "../hooks/guards";
 import { LIMITS } from "../limits";
-import { makeContext, scriptedProvider } from "./helpers";
+import { makeContext, makeDefinition, scriptedProvider } from "./helpers";
 import type { ToolCall } from "../types";
 
 const ctx = () => makeContext(scriptedProvider([[]]));
@@ -98,6 +98,33 @@ describe("depthGuard", () => {
     expect(await depthGuard.beforeTool?.(nested, call(tool))).toMatchObject({
       reason: "depth_exceeded",
     });
+  });
+});
+
+describe("handsGuard", () => {
+  it("lets town-native code use file_read", async () => {
+    const rune = makeContext(scriptedProvider([[]]), {
+      definition: makeDefinition({ kind: "code", slug: "code" }),
+    });
+    expect(await handsGuard.beforeTool?.(rune, call("file_read"))).toBeUndefined();
+  });
+
+  it("stops diet and visitor-owned agents from using computer tools", async () => {
+    expect(await handsGuard.beforeTool?.(ctx(), call("file_read"))).toEqual({
+      allowed: false,
+      reason: "hands_not_allowed",
+    });
+    const visitor = makeContext(scriptedProvider([[]]), {
+      definition: makeDefinition({ kind: "code", slug: "visitor", isTownNative: false }),
+    });
+    expect(await handsGuard.beforeTool?.(visitor, call("code_run"))).toEqual({
+      allowed: false,
+      reason: "hands_not_allowed",
+    });
+  });
+
+  it("leaves ordinary town tools alone", async () => {
+    expect(await handsGuard.beforeTool?.(ctx(), call("log_meal"))).toBeUndefined();
   });
 });
 

@@ -1,3 +1,5 @@
+import { DIVINATION_ARCHIVE_RULES } from "./divination";
+import { handsPrompt } from "./workspace";
 import type { AgentDefinition, Skill } from "./types";
 
 function matchSkills(skills: Skill[], userMessage: string): Skill[] {
@@ -56,6 +58,13 @@ export function buildSystemPrompt(input: PromptInput): string {
 
   sections.push(a2aRules());
 
+  const hands = handsPrompt(definition.kind);
+  if (hands && definition.isTownNative) sections.push(hands);
+
+  if (definition.kind === "divination") {
+    sections.push(DIVINATION_ARCHIVE_RULES);
+  }
+
   if (definition.memorySlots.length) {
     const slots = definition.memorySlots.map((s) => `- ${s.key}：${s.desc}`).join("\n");
     sections.push(
@@ -66,6 +75,10 @@ export function buildSystemPrompt(input: PromptInput): string {
         "- 提议之后要等访客点头才算生效，不要当作已经记下。",
         "- 一般的经历总结用 remember_insight，不需要访客确认。",
       ].join("\n"),
+    );
+  } else if (definition.kind === "divination") {
+    sections.push(
+      "关于长期记忆：占卜结果不是事实，不能提议铁律。每次占卜用 log_reading 把牌面、解读、反馈归档；通用手艺才用 remember_insight。",
     );
   } else {
     sections.push(

@@ -95,7 +95,7 @@ export const KIND_PRESETS: Record<AgentKind, KindPreset> = {
 
   divination: {
     capabilityTags: ["divination", "entertainment"],
-    toolIds: ["draw_tarot", "lookup_card", "log_reading"],
+    toolIds: ["draw_tarot", "lookup_card", "log_reading", "list_readings"],
     // Deliberately empty: a reading is not a fact and must never reach L1.
     memorySlots: NO_SLOTS,
     selfCanon: [
@@ -156,9 +156,10 @@ function resolveProvider(
   if (row.ownerUserId !== null) return "builtin";
 
   const declared = (row.provider || preset.defaultProvider) as ProviderId;
-  if (declared === "cursor" && typeof providerOptions.cursorApiKey !== "string") {
-    // Phase 4 hasn't landed a key for this agent yet — keep the workshop open.
-    return "builtin";
+  if (declared === "cursor") {
+    const rowKey = typeof providerOptions.cursorApiKey === "string" && providerOptions.cursorApiKey.trim();
+    const envKey = Boolean(process.env.CURSOR_API_KEY?.trim());
+    if (!rowKey && !envKey) return "builtin";
   }
   return declared;
 }

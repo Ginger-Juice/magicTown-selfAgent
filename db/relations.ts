@@ -7,12 +7,15 @@ import {
   messages,
   delegations,
   agentRuns,
+  trailEvents,
+  toolEvents,
 } from "./schema";
 
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(authSessions),
   agents: many(agents),
   conversations: many(conversations),
+  trailEvents: many(trailEvents),
 }));
 
 export const authSessionsRelations = relations(authSessions, ({ one }) => ({
@@ -76,5 +79,23 @@ export const delegationsRelations = relations(delegations, ({ one }) => ({
     fields: [delegations.toAgentId],
     references: [agents.id],
     relationName: "delegationTo",
+  }),
+}));
+
+export const trailEventsRelations = relations(trailEvents, ({ one }) => ({
+  user: one(users, {
+    fields: [trailEvents.userId],
+    references: [users.id],
+  }),
+}));
+
+export const toolEventsRelations = relations(toolEvents, ({ one }) => ({
+  user: one(users, {
+    fields: [toolEvents.userId],
+    references: [users.id],
+  }),
+  agent: one(agents, {
+    fields: [toolEvents.agentId],
+    references: [agents.id],
   }),
 }));

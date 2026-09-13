@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ほしマート</title>
+    <style>
+      html, body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #0a1018;
+        cursor: grab;
+      }
+      body:active { cursor: grabbing; }
+      canvas { display: block; width: 100%; height: 100%; }
+    </style>
+  </head>
+  <body>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module">
+      import * as THREE from "three";
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+      import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+      import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+      import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a1018);
+      scene.fog = new THREE.FogExp2(0x0c1420, 0.018);
+
+      const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.05, 80);
+      camera.position.set(-7.6, 6.4, 8.8);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.setSize(innerWidth, innerHeight);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.05;
+      renderer.shadowMap.enabled = true;
+      document.body.appendChild(renderer.domElement);
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.target.set(0.15, 0.95, -0.05);
+      controls.minDistance = 4.2;
+      controls.maxDistance = 16;
+      controls.maxPolarAngle = Math.PI * 0.48;
+      controls.minPolarAngle = 0.18;
+      controls.enablePan = true;
+      controls.screenSpacePanning = true;
+
+      const composer = new EffectComposer(renderer);
+      composer.addPass(new RenderPass(scene, camera));
+      const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.2, 0.45, 0.86);
+      composer.addPass(bloom);
+      composer.addPass(new OutputPass());
+
+      scene.add(new THREE.AmbientLight(0x5a6d8c, 0.42));
+      scene.add(new THREE.HemisphereLight(0x6a88bb, 0x1a2030, 0.38));
+      const fill = new THREE.DirectionalLight(0x8aa6d6, 0.28);
+      fill.position.set(-4, 8, -3);
+      scene.add(fill);
+      const neon = new THREE.PointLight(0x4ecfc6, 12, 9, 1.6);
+      neon.position.set(0.7, 3.3, 2.1);
+      scene.add(neon);
+      const warm = new THREE.PointLight(0xffc56a, 16, 7, 1.4);
+      warm.position.set(0.7, 1.8, 1.4);
+      scene.add(warm);
+      const lamp = new THREE.PointLight(0xffb056, 10, 6, 1.8);
+      lamp.position.set(-1.5, 2.9, 2.0);
+      scene.add(lamp);
+
+      const loader = new GLTFLoader();
+      const root = await loader.loadAsync("./konbini_rain_night.glb");
+      const model = root.scene;
+      model.traverse((obj) => {
+        if (obj.isMesh) {
+          obj.castShadow = true;
+          obj.receiveShadow = true;
+          const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+          for (const mat of mats) {
+            if (!mat) continue;
+            if (mat.color) {
+              const hsl = { h: 0, s: 0, l: 0 };
+              mat.color.getHSL(hsl);
+              if (hsl.s < 0.08 && mat.emissive) {
+                const eh = { h: 0, s: 0, l: 0 };
+                mat.emissive.getHSL(eh);
+                if (eh.s > 0.12) mat.color.copy(mat.emissive);
+              } else if (hsl.s > 0.04) {
+                mat.color.setHSL(hsl.h, Math.min(1, hsl.s * 1.35), hsl.l);
+              }
+            }
+            if (mat.emissive && mat.emissiveIntensity > 3.2) {
+              mat.emissiveIntensity = 3.2;
+            }
+            if (mat.name && /glass|water/i.test(mat.name + (obj.name || ""))) {
+              mat.transparent = true;
+              mat.opacity = Math.min(mat.opacity ?? 1, 0.28);
+              mat.depthWrite = false;
+            }
+          }
+        }
+      });
+      scene.add(model);
+
+      const signMats = [];
+      model.traverse((obj) => {
+        if (!obj.isMesh) return;
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        for (const mat of mats) {
+          if (mat && /sign|neon|interiorlight|lamp/i.test(mat.name || "")) {
+            signMats.push({ mat, base: mat.emissiveIntensity || 1 });
+          }
+        }
+      });
+
+      const rainCount = 1600;
+      const rainGeo = new THREE.BufferGeometry();
+      const rainPos = new Float32Array(rainCount * 3);
+      const rainVel = new Float32Array(rainCount);
+      for (let i = 0; i < rainCount; i++) {
+        rainPos[i * 3] = (Math.random() - 0.5) * 8.2;
+        rainPos[i * 3 + 1] = Math.random() * 6.5 + 0.4;
+        rainPos[i * 3 + 2] = (Math.random() - 0.5) * 8.2;
+        rainVel[i] = 7 + Math.random() * 4;
+      }
+      rainGeo.setAttribute("position", new THREE.BufferAttribute(rainPos, 3));
+      const rain = new THREE.Points(
+        rainGeo,
+        new THREE.PointsMaterial({
+          color: 0x7a93aa,
+          size: 0.028,
+          transparent: true,
+          opacity: 0.32,
+          depthWrite: false,
+        })
+      );
+      scene.add(rain);
+
+      const dripCount = 10;
+      const drips = [];
+      const dripGeom = new THREE.SphereGeometry(0.018, 8, 8);
+      const dripMat = new THREE.MeshBasicMaterial({ color: 0xc5e4ff });
+      const dripStarts = [
+        [-0.5, 2.75, 2.15],
+        [0.35, 2.75, 2.15],
+        [1.15, 2.75, 2.15],
+        [1.9, 2.75, 2.15],
+        [-1.1, 2.75, 0.6],
+      ];
+      for (let i = 0; i < dripCount; i++) {
+        const mesh = new THREE.Mesh(dripGeom, dripMat);
+        const src = dripStarts[i % dripStarts.length];
+        mesh.userData = { x: src[0], z: src[2], y0: src[1], phase: i * 0.37 };
+        scene.add(mesh);
+        drips.push(mesh);
+      }
+
+      const clock = new THREE.Clock();
+      function tick() {
+        const t = clock.getElapsedTime();
+        const dt = Math.min(clock.getDelta(), 0.05);
+        controls.update();
+
+        const pos = rain.geometry.attributes.position.array;
+        for (let i = 0; i < rainCount; i++) {
+          pos[i * 3] += dt * 0.35;
+          pos[i * 3 + 1] -= rainVel[i] * dt;
+          if (pos[i * 3 + 1] < 0.32) {
+            pos[i * 3] = (Math.random() - 0.5) * 8.2;
+            pos[i * 3 + 1] = 6.2 + Math.random();
+            pos[i * 3 + 2] = (Math.random() - 0.5) * 8.2;
+          }
+        }
+        rain.geometry.attributes.position.needsUpdate = true;
+
+        for (const drip of drips) {
+          const u = (t * 0.55 + drip.userData.phase) % 1;
+          drip.position.set(drip.userData.x, drip.userData.y0 - u * 2.35, drip.userData.z);
+          const s = u < 0.08 ? u / 0.08 : u > 0.9 ? (1 - u) / 0.1 : 1;
+          drip.scale.setScalar(0.35 + 0.85 * s);
+        }
+
+        for (const { mat, base } of signMats) {
+          mat.emissiveIntensity = base * (1 + 0.08 * Math.sin(t * 2.1) + 0.04 * Math.sin(t * 7.3));
+        }
+
+        composer.render();
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+
+      addEventListener("resize", () => {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+        composer.setSize(innerWidth, innerHeight);
+      });
+    </script>
+  </body>
+</html>

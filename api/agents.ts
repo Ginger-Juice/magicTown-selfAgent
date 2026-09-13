@@ -3,13 +3,14 @@ import { TRPCError } from "@trpc/server";
 import { eq, and, desc, isNull } from "drizzle-orm";
 import { createRouter, publicQuery, authedProcedure } from "./middleware";
 import { getDb } from "./queries/connection";
-import { agents, conversations, delegations, memories, messages } from "@db/schema";
+import { agents, conversations, delegations, memories, messages, toolEvents } from "@db/schema";
 import * as store from "./runtime/memory/store";
 import { getTownRuntime } from "./runtime/app";
 import { publicCatalog, townDefaultId } from "./runtime/providers/catalog";
 import { drainEnvelopes } from "./runtime/a2a/worker";
 import { RuntimeError } from "./runtime/errors";
 import { AGENT_KINDS, KIND_PRESETS } from "./runtime/registry";
+import { recordQuiet } from "./runtime/trail";
 import type { AgentKind, SystemNote } from "./runtime/types";
 
 export { AGENT_KINDS };
@@ -134,7 +135,15 @@ async function ensureTownAgents() {
     const existing = await db.query.agents.findFirst({
       where: eq(agents.slug, seed.slug),
     });
-    if (existing) continue;
+    if (existing) {
+      if (existing.landmarkId !== seed.landmarkId || existing.persona !== seed.persona) {
+        await db
+          .update(agents)
+          .set({ landmarkId: seed.landmarkId, persona: seed.persona })
+          .where(eq(agents.slug, seed.slug));
+      }
+      continue;
+    }
     const preset = KIND_PRESETS[seed.kind];
     await db.insert(agents).values({
       ownerUserId: null,
@@ -187,6 +196,8 @@ function describeFailure(err: unknown): string {
         return "镇上的通讯水晶还没接好（.env 里一个模型 key 都没填），居民暂时说不出话。";
       case "provider_failed":
         return "通讯水晶忽明忽暗，这次没接通，稍后再试。";
+      case "aborted":
+        return "通讯水晶等了太久没回音，先挂上了。再试一次？";
       case "depth_exceeded":
         return "这件事转了太多手，先停下来。";
       default:
@@ -194,6 +205,83 @@ function describeFailure(err: unknown): string {
     }
   }
   return "刚才出了点岔子，这句话没能送到。";
+}
+
+const FAILED_META = JSON.stringify({ kind: "notice", failed: true });
+
+function isFailedNote(meta: string | null | undefined): boolean {
+  if (!meta) return false;
+  try {
+    return Boolean((JSON.parse(meta) as { failed?: boolean }).failed);
+  } catch {
+    return false;
+  }
+}
+
+async function deliverAgentReply(input: {
+  conversationId: number;
+  agentId: number;
+  userId: number;
+  userMessage: string;
+  model: string | null;
+  replaceFailedId?: number;
+  signal?: AbortSignal;
+}): Promise<{ envelopesCreated: number; failed: boolean }> {
+  const db = getDb();
+  try {
+    const result = await getTownRuntime().run({
+      agentId: input.agentId,
+      userId: input.userId,
+      conversationId: input.conversationId,
+      userMessage: input.userMessage,
+      model: input.model,
+      signal: input.signal,
+    });
+
+    if (input.replaceFailedId) {
+      await db.delete(messages).where(eq(messages.id, input.replaceFailedId));
+    }
+
+    const reply = result.finalText.trim();
+    if (reply) {
+      await db.insert(messages).values({
+        conversationId: input.conversationId,
+        fromKind: "agent",
+        fromUserId: null,
+        fromAgentId: input.agentId,
+        body: reply,
+      });
+    }
+    await persistNotes(input.conversationId, input.agentId, result.notes);
+
+    if (result.envelopesCreated > 0) {
+      void drainEnvelopes(getTownRuntime(), result.envelopesCreated).catch((err: unknown) => {
+        console.error("[agents] envelope delivery failed", err);
+      });
+    }
+    return { envelopesCreated: result.envelopesCreated, failed: false };
+  } catch (err) {
+    if (err instanceof RuntimeError && err.code === "agent_busy") {
+      throw new TRPCError({ code: "CONFLICT", message: "agent_busy" });
+    }
+    const body = describeFailure(err);
+    if (input.replaceFailedId) {
+      await db
+        .update(messages)
+        .set({ body, meta: FAILED_META })
+        .where(eq(messages.id, input.replaceFailedId));
+    } else {
+      await db.insert(messages).values({
+        conversationId: input.conversationId,
+        fromKind: "system",
+        fromUserId: null,
+        fromAgentId: input.agentId,
+        body,
+        meta: FAILED_META,
+      });
+    }
+    return { envelopesCreated: 0, failed: true };
+  }
 }
 
 export const agentRouter = createRouter({
@@ -333,8 +421,22 @@ export const agentRouter = createRouter({
             .update(conversations)
             .set({ model: input.model })
             .where(eq(conversations.id, existing.id));
+          recordQuiet({
+            userId: ctx.user.id,
+            kind: "open_chat",
+            agentId: agent.id,
+            landmarkId: agent.landmarkId,
+            conversationId: existing.id,
+          });
           return { ...existing, model: input.model };
         }
+        recordQuiet({
+          userId: ctx.user.id,
+          kind: "open_chat",
+          agentId: agent.id,
+          landmarkId: agent.landmarkId,
+          conversationId: existing.id,
+        });
         return existing;
       }
       const [{ id }] = await db
@@ -350,6 +452,14 @@ export const agentRouter = createRouter({
         where: eq(conversations.id, id),
       });
       if (!row) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      recordQuiet({
+        userId: ctx.user.id,
+        kind: "open_chat",
+        agentId: agent.id,
+        landmarkId: agent.landmarkId,
+        conversationId: row.id,
+        sourceKey: `convo:${row.id}`,
+      });
       return row;
     }),
 
@@ -385,63 +495,97 @@ export const agentRouter = createRouter({
       if (!convo || convo.userId !== ctx.user.id) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
-      await db.insert(messages).values({
+      const agent = await db.query.agents.findFirst({
+        where: eq(agents.id, convo.agentId),
+      });
+      const [{ id: messageId }] = await db
+        .insert(messages)
+        .values({
+          conversationId: convo.id,
+          fromKind: "user",
+          fromUserId: ctx.user.id,
+          fromAgentId: null,
+          body: input.body,
+        })
+        .$returningId();
+      recordQuiet({
+        userId: ctx.user.id,
+        kind: "chat_turn",
+        agentId: convo.agentId,
+        landmarkId: agent?.landmarkId ?? null,
         conversationId: convo.id,
-        fromKind: "user",
-        fromUserId: ctx.user.id,
-        fromAgentId: null,
-        body: input.body,
+        sourceKey: `msg:${messageId}`,
       });
 
-      let envelopesCreated = 0;
-      try {
-        const result = await getTownRuntime().run({
-          agentId: convo.agentId,
-          userId: ctx.user.id,
-          conversationId: convo.id,
-          userMessage: input.body,
-          model: convo.model,
-        });
-        envelopesCreated = result.envelopesCreated;
-
-        const reply = result.finalText.trim();
-        if (reply) {
-          await db.insert(messages).values({
-            conversationId: convo.id,
-            fromKind: "agent",
-            fromUserId: null,
-            fromAgentId: convo.agentId,
-            body: reply,
-          });
-        }
-        await persistNotes(convo.id, convo.agentId, result.notes);
-
-        // Deliver right away rather than waiting for the sweeper; the frontend
-        // is already polling because it saw a non-zero envelope count.
-        if (envelopesCreated > 0) {
-          void drainEnvelopes(getTownRuntime(), envelopesCreated).catch((err: unknown) => {
-            console.error("[agents] envelope delivery failed", err);
-          });
-        }
-      } catch (err) {
-        // A busy agent is a double-submit, not a failure worth writing down.
-        if (err instanceof RuntimeError && err.code === "agent_busy") {
-          throw new TRPCError({ code: "CONFLICT", message: "agent_busy" });
-        }
-        await db.insert(messages).values({
-          conversationId: convo.id,
-          fromKind: "system",
-          body: describeFailure(err),
-          meta: JSON.stringify({ kind: "notice", failed: true }),
-        });
-      }
+      const delivered = await deliverAgentReply({
+        conversationId: convo.id,
+        agentId: convo.agentId,
+        userId: ctx.user.id,
+        userMessage: input.body,
+        model: convo.model,
+        signal: ctx.req.signal,
+      });
 
       const rows = await db
         .select()
         .from(messages)
         .where(eq(messages.conversationId, convo.id))
         .orderBy(messages.id);
-      return { messages: rows, envelopesCreated };
+      return { messages: rows, envelopesCreated: delivered.envelopesCreated, failed: delivered.failed };
+    }),
+
+  retryMessage: authedProcedure
+    .input(
+      z.object({
+        conversationId: z.number().int().positive(),
+        failedMessageId: z.number().int().positive(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const db = getDb();
+      const convo = await db.query.conversations.findFirst({
+        where: eq(conversations.id, input.conversationId),
+      });
+      if (!convo || convo.userId !== ctx.user.id) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const failed = await db.query.messages.findFirst({
+        where: eq(messages.id, input.failedMessageId),
+      });
+      if (
+        !failed ||
+        failed.conversationId !== convo.id ||
+        failed.fromKind !== "system" ||
+        !isFailedNote(failed.meta)
+      ) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+      const prior = await db
+        .select()
+        .from(messages)
+        .where(and(eq(messages.conversationId, convo.id), eq(messages.fromKind, "user")))
+        .orderBy(desc(messages.id));
+      const userTurn = prior.find((row) => row.id < failed.id);
+      if (!userTurn) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "nothing_to_retry" });
+      }
+
+      const delivered = await deliverAgentReply({
+        conversationId: convo.id,
+        agentId: convo.agentId,
+        userId: ctx.user.id,
+        userMessage: userTurn.body,
+        model: convo.model,
+        replaceFailedId: failed.id,
+        signal: ctx.req.signal,
+      });
+
+      const rows = await db
+        .select()
+        .from(messages)
+        .where(eq(messages.conversationId, convo.id))
+        .orderBy(messages.id);
+      return { messages: rows, envelopesCreated: delivered.envelopesCreated, failed: delivered.failed };
     }),
 
   delegate: authedProcedure
@@ -475,6 +619,34 @@ export const agentRouter = createRouter({
         })
         .$returningId();
       return db.query.delegations.findFirst({ where: eq(delegations.id, id) });
+    }),
+
+  listToolEvents: authedProcedure
+    .input(z.object({ conversationId: z.number().int().positive() }))
+    .query(async ({ input, ctx }) => {
+      const convo = await getDb().query.conversations.findFirst({
+        where: eq(conversations.id, input.conversationId),
+      });
+      if (!convo || convo.userId !== ctx.user.id) throw new TRPCError({ code: "NOT_FOUND" });
+      const rows = await getDb()
+        .select()
+        .from(toolEvents)
+        .where(eq(toolEvents.conversationId, convo.id))
+        .orderBy(toolEvents.id);
+      return rows.map((row) => ({
+        id: row.id,
+        type: row.type,
+        callId: row.callId,
+        step: row.step,
+        createdAt: row.createdAt,
+        payload: (() => {
+          try {
+            return JSON.parse(row.payload) as unknown;
+          } catch {
+            return row.payload;
+          }
+        })(),
+      }));
     }),
 
   listDelegations: authedProcedure.query(async ({ ctx }) => {

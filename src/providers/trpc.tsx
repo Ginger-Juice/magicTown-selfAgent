@@ -8,7 +8,12 @@ import { getAdminToken } from "@/lib/apple";
 
 export const trpc = createTRPCReact<AppRouter>();
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    mutations: { retry: false },
+  },
+});
+const TRPC_TIMEOUT_MS = 70_000;
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
@@ -21,10 +26,21 @@ const trpcClient = trpc.createClient({
         return token ? { "x-admin-token": token } : {};
       },
       fetch(input, init) {
-        return globalThis.fetch(input, {
-          ...(init ?? {}),
-          credentials: "include",
-        });
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), TRPC_TIMEOUT_MS);
+        const parent = init?.signal;
+        const onParentAbort = () => controller.abort();
+        parent?.addEventListener("abort", onParentAbort);
+        return globalThis
+          .fetch(input, {
+            ...(init ?? {}),
+            signal: controller.signal,
+            credentials: "include",
+          })
+          .finally(() => {
+            clearTimeout(timer);
+            parent?.removeEventListener("abort", onParentAbort);
+          });
       },
     }),
   ],

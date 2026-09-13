@@ -7,6 +7,7 @@ import { compile, filterByTopics, type DigestBlocks } from "./digest";
 import { SESSION_ROLLING_KEY } from "./keys";
 import { canForget, decideWrite, type PolicyContext, type WriteRequest } from "./policy";
 import type { MemoryLevel, MemoryStatus, MemorySubject, MemoryView } from "../types";
+import { recordQuiet } from "../trail";
 
 export type WriteOutcome =
   | { ok: true; id: number; status: MemoryStatus }
@@ -129,6 +130,17 @@ export async function write(req: WriteRequest, env: WriteEnv): Promise<WriteOutc
     { type: w.subjectType, id: w.subjectId },
     w.level === "L3" ? "L2" : w.level,
   );
+
+  if (w.subjectType === "user" && (w.level === "L1" || w.level === "L2")) {
+    recordQuiet({
+      userId: w.subjectId,
+      kind: w.level === "L1" ? "memory_l1" : "memory_l2",
+      agentId: env.proposedByAgentId ?? null,
+      conversationId: env.sourceConversationId ?? w.conversationId ?? null,
+      memoryId: row.id,
+      sourceKey: `mem:${row.id}`,
+    });
+  }
 
   return { ok: true, id: row.id, status: row.status as MemoryStatus };
 }
@@ -291,7 +303,9 @@ export async function listForUser(
   });
   return rows.sort((a, b) => {
     if (a.level !== b.level) return a.level < b.level ? -1 : 1;
-    return b.updatedAt.getTime() - a.updatedAt.getTime();
+    const tb = b.updatedAt instanceof Date ? b.updatedAt.getTime() : Date.parse(String(b.updatedAt));
+    const ta = a.updatedAt instanceof Date ? a.updatedAt.getTime() : Date.parse(String(a.updatedAt));
+    return (Number.isFinite(tb) ? tb : 0) - (Number.isFinite(ta) ? ta : 0);
   });
 }
 

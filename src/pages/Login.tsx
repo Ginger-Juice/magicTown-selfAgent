@@ -52,8 +52,8 @@ export default function Login() {
         onSubmit={(e) => void submit(e)}
         className="sticker-card w-full max-w-sm p-8 text-center"
       >
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-white bg-lagoon/50 shadow-md">
-          <KeyRound className="h-7 w-7 text-ink" />
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border-[3px] border-butter bg-ink shadow-md">
+          <KeyRound className="h-7 w-7 text-butter" />
         </div>
         <h1 className="font-display text-2xl font-semibold text-ink">{t('auth.title')}</h1>
         <p className="font-hand mt-1 text-xl text-ink-soft">{t('auth.subtitle')}</p>
@@ -68,7 +68,7 @@ export default function Login() {
               onChange={(e) => setDisplayName(e.target.value)}
               required
               maxLength={60}
-              className="mt-1 w-full rounded-2xl border-[3px] border-white bg-cream px-4 py-2.5 font-bold text-ink shadow-inner outline-none focus:border-[#ffb37e]"
+              className="mt-1 w-full rounded-2xl border-[3px] border-white bg-cream px-4 py-2.5 font-bold text-ink shadow-inner outline-none focus:border-butter"
             />
           </label>
         )}
@@ -83,7 +83,7 @@ export default function Login() {
             onChange={(e) => setEmail(e.target.value)}
             required
             autoComplete="email"
-            className="mt-1 w-full rounded-2xl border-[3px] border-white bg-cream px-4 py-2.5 font-bold text-ink shadow-inner outline-none focus:border-[#ffb37e]"
+            className="mt-1 w-full rounded-2xl border-[3px] border-white bg-cream px-4 py-2.5 font-bold text-ink shadow-inner outline-none focus:border-butter"
           />
         </label>
 
@@ -98,7 +98,7 @@ export default function Login() {
             required
             minLength={8}
             autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-            className="mt-1 w-full rounded-2xl border-[3px] border-white bg-cream px-4 py-2.5 font-bold text-ink shadow-inner outline-none focus:border-[#ffb37e]"
+            className="mt-1 w-full rounded-2xl border-[3px] border-white bg-cream px-4 py-2.5 font-bold text-ink shadow-inner outline-none focus:border-butter"
           />
           {mode === 'register' && (
             <span className="mt-1 block text-xs font-semibold text-ink-soft">{t('auth.passwordHint')}</span>

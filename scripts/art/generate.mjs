@@ -1,11 +1,13 @@
 /**
  * Google Gemini image pipeline (GOOGLE_API_KEY only — do not also set GEMINI_API_KEY).
+ * Generate here; punch locally with scripts/art/punch.py (do not use Cursor GenerateImage).
  * Usage:
  *   node scripts/art/generate.mjs --list
  *   node scripts/art/generate.mjs --dump
  *   node scripts/art/generate.mjs --probe
  *   node scripts/art/generate.mjs --preview
  *   node scripts/art/generate.mjs --ids map-base-ext,b-townhall,b-livehouse
+ *   python scripts/art/punch.py b-townhall.png
  *
  * Writes to assets/art-preview/ (does not overwrite public/).
  */
@@ -27,7 +29,7 @@ const OUT_DIR = path.join(root, "assets", "art-preview");
 const GEMINI_ROOT = "https://generativelanguage.googleapis.com/v1beta";
 const DEFAULT_MODEL = "gemini-3.1-flash-lite-image";
 const FALLBACK_MODEL = "gemini-3.1-flash-image";
-const REQUEST_MS = 120_000;
+const REQUEST_MS = 180_000;
 const RETRIES = 1;
 
 async function loadDotEnv(filePath) {
@@ -80,8 +82,8 @@ function pickAspect(entry) {
   return "3:4";
 }
 
-function pickImageSize() {
-  return "1K";
+function pickImageSize(entry) {
+  return entry.imageSize || "1K";
 }
 
 async function gemini(apiKey, pathname, init) {
@@ -170,7 +172,7 @@ async function loadRefParts(refPath) {
 
 async function requestImage(apiKey, model, entry, withSize, refParts) {
   const imageConfig = { aspectRatio: pickAspect(entry) };
-  if (withSize) imageConfig.imageSize = pickImageSize();
+  if (withSize) imageConfig.imageSize = pickImageSize(entry);
   const parts = refParts.length
     ? [...refParts, { text: entry.prompt }]
     : [{ text: entry.prompt }];
@@ -312,7 +314,7 @@ async function main() {
 
   for (const entry of jobs) {
     const dest = path.join(OUT_DIR, entry.file);
-    process.stdout.write(`→ ${entry.id} ${pickAspect(entry)} 1K … `);
+    process.stdout.write(`→ ${entry.id} ${pickAspect(entry)} ${pickImageSize(entry)} … `);
     try {
       const { buf, model } = await generateWithFallback(apiKey, imageModel, entry, refParts);
       await writeFile(dest, buf);

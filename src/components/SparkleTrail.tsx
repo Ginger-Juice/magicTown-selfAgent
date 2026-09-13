@@ -16,7 +16,7 @@ type Particle = {
   maxLife: number;
 };
 
-const COLORS = ['#FFE742', '#FFFFFF', '#FFD3EA', '#B8F0D8', '#CDE7FF', '#FFE742'];
+const COLORS = ['#E8B84A', '#F3E6C8', '#C47A3A', '#FFF4C8', '#8A96A8', '#E8B84A'];
 
 export default function SparkleTrail() {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -131,6 +131,14 @@ export default function SparkleTrail() {
       }
     };
     const onDown = (e: PointerEvent) => {
+      const target = e.target;
+      if (
+        target instanceof Element &&
+        (target.closest('input, textarea, select, [contenteditable="true"], .select-text') ||
+          window.getSelection()?.type === 'Range')
+      ) {
+        return;
+      }
       spawn(e.clientX, e.clientY, 14, true);
       kick();
     };

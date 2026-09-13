@@ -1,4 +1,5 @@
 import { LIMITS } from "../limits";
+import { isHandsTool, mayUseHands } from "../workspace";
 import type { Hook } from "./bus";
 import type { RunContext, ToolCall, ToolVerdict } from "../types";
 
@@ -57,6 +58,18 @@ export function createRepeatGuard(): Hook {
   };
 }
 
+/**
+ * Computer tools are only for town-native rune / library residents. The
+ * registry also withholds the schemas; this is the belt if toolIds are dirty.
+ */
+export const handsGuard: Hook = {
+  name: "hands",
+  async beforeTool(ctx: RunContext, call: ToolCall): Promise<ToolVerdict | void> {
+    if (!isHandsTool(call.name)) return;
+    if (!mayUseHands(ctx.definition)) return { allowed: false, reason: "hands_not_allowed" };
+  },
+};
+
 export function defaultGuards(): Hook[] {
-  return [wallClockGuard, depthGuard, createRepeatGuard()];
+  return [wallClockGuard, depthGuard, createRepeatGuard(), handsGuard];
 }

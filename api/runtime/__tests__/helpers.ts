@@ -51,6 +51,7 @@ export function makeContext(provider: Provider, patch: Partial<RunContext> = {})
     definition: makeDefinition(),
     user: { id: 7, displayName: "Ada", email: "ada@example.com" },
     conversationId: 1,
+    userMessage: "",
     depth: 0,
     runId: null,
     provider,

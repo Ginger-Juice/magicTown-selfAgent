@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { defineTool } from "./registry";
 import { asList, fail, ok, recall, recordKey, remember } from "./lib";
+import { formatReadingArchive, uniqueReadingKey } from "../divination";
 import {
   DISHES,
   RECIPES,
@@ -407,22 +408,44 @@ const lookupCard = defineTool({
 
 const logReading = defineTool({
   id: "log_reading",
-  description: "把这次占卜记下来。只留牌面与访客的感受，不写成事实。",
+  description:
+    "把这一次占卜完整归档：牌面、你的解读、访客的反馈。每次一档，不要把占卜写成事实。访客还没反馈时也可以先记，反馈补在下一次。",
   realAction: true,
   parameters: z.object({
-    question: z.string().min(1).max(120),
-    cards: z.array(z.string().max(30)).min(1).max(5),
-    takeaway: z.string().max(200).optional(),
+    question: z.string().max(120).optional(),
+    cards: z.array(z.string().max(40)).min(1).max(5),
+    spread: z.string().max(24).optional(),
+    interpretation: z.string().min(1).max(600),
+    feedback: z.string().max(400).optional(),
   }),
   async execute(args, ctx) {
-    const value = [`问：${args.question}`, `牌：${args.cards.join("、")}`, args.takeaway]
-      .filter(Boolean)
-      .join("｜");
+    const cards = args.cards.map((raw) => {
+      const reversed = /逆/.test(raw);
+      const name = raw.replace(/[（(]?(正|逆)[）)]?/g, "").trim() || raw.trim();
+      return { name, reversed };
+    });
+    const value = formatReadingArchive({
+      question: args.question?.trim() || null,
+      cards,
+      spread: args.spread ?? null,
+      interpretation: args.interpretation,
+      feedback: args.feedback?.trim() || null,
+    });
     return remember(ctx, {
-      key: recordKey("reading", args.question),
+      key: uniqueReadingKey(`${args.cards.join(",")}:${args.question ?? ""}:${Date.now()}`),
       value,
       topics: "divination",
     });
+  },
+});
+
+const listReadings = defineTool({
+  id: "list_readings",
+  description: "查阅这位访客过往的占卜档案（牌面、解读、反馈）。开新牌之前先看一眼。",
+  parameters: z.object({}),
+  async execute(_args, ctx) {
+    const rows = await recall(ctx, "reading:");
+    return ok({ readings: asList(rows, 12), count: rows.length });
   },
 });
 
@@ -445,4 +468,5 @@ export const TOWN_TOOLS: ToolSpec[] = [
   drawTarot,
   lookupCard,
   logReading,
+  listReadings,
 ];

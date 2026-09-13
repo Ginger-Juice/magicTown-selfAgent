@@ -5,7 +5,8 @@ import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { appRouter } from "./router";
 import { createContext } from "./context";
 import { env } from "./lib/env";
-import { startSweeper } from "./runtime/sweeper";
+import { startSweeper, stopSweeper } from "./runtime/sweeper";
+import { resetTownRuntime } from "./runtime/app";
 
 const app = new Hono<{ Bindings: HttpBindings }>();
 
@@ -21,6 +22,13 @@ app.use("/api/trpc/*", async (c) => {
 app.all("/api/*", (c) => c.json({ error: "Not Found" }, 404));
 
 startSweeper();
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    stopSweeper();
+    resetTownRuntime();
+  });
+}
 
 export default app;
 

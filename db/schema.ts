@@ -269,3 +269,59 @@ export const agentRuns = mysqlTable(
 );
 
 export type AgentRun = typeof agentRuns.$inferSelect;
+
+/**
+ * Append-only visitor journey. Weight is frozen at insert so the journal can
+ * colour a row without re-deriving it. `sourceKey` makes backfill idempotent;
+ * live landmark/chat opens leave it null and use a 10-minute window instead.
+ */
+export const trailEvents = mysqlTable(
+  "trail_events",
+  {
+    id: serialId(),
+    userId: int("userId").notNull(),
+    kind: varchar("kind", { length: 24 }).notNull(),
+    weight: int("weight").notNull(),
+    agentId: int("agentId"),
+    landmarkId: varchar("landmarkId", { length: 64 }),
+    conversationId: int("conversationId"),
+    memoryId: int("memoryId"),
+    sourceKey: varchar("sourceKey", { length: 96 }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => [
+    index("trail_events_user_created_idx").on(table.userId, table.createdAt),
+    index("trail_events_user_kind_idx").on(table.userId, table.kind),
+    uniqueIndex("trail_events_source_unique").on(table.sourceKey),
+  ],
+);
+
+export type TrailEvent = typeof trailEvents.$inferSelect;
+export type InsertTrailEvent = typeof trailEvents.$inferInsert;
+
+/**
+ * Append-only tool log, one row per tool/call or tool/result. Pair them with
+ * `callId`. Written during the turn so a hung run still leaves the call.
+ */
+export const toolEvents = mysqlTable(
+  "tool_events",
+  {
+    id: serialId(),
+    runId: int("runId"),
+    conversationId: int("conversationId"),
+    userId: int("userId").notNull(),
+    agentId: int("agentId").notNull(),
+    type: varchar("type", { length: 24 }).notNull(),
+    callId: varchar("callId", { length: 80 }).notNull(),
+    step: int("step").notNull(),
+    payload: mediumtext("payload").notNull(),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => [
+    index("tool_events_convo_idx").on(table.conversationId, table.id),
+    index("tool_events_run_idx").on(table.runId, table.id),
+    index("tool_events_call_idx").on(table.callId),
+  ],
+);
+
+export type ToolEvent = typeof toolEvents.$inferSelect;

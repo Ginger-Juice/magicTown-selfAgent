@@ -1,3 +1,4 @@
+import { throwIfAborted } from "../abort";
 import { LIMITS } from "../limits";
 import { RuntimeError } from "../errors";
 import { resolveModel, type ResolvedModel } from "./catalog";
@@ -51,12 +52,16 @@ function parseArgs(raw: string): unknown {
   }
 }
 
-async function* readSse(body: ReadableStream<Uint8Array>): AsyncGenerator<string> {
+async function* readSse(
+  body: ReadableStream<Uint8Array>,
+  signal?: AbortSignal,
+): AsyncGenerator<string> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
   try {
     for (;;) {
+      throwIfAborted(signal);
       const { done, value } = await reader.read();
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
@@ -141,7 +146,7 @@ export function createBuiltinProvider(resolved: ResolvedModel): Provider {
 
       const partials = new Map<number, PartialCall>();
 
-      for await (const payload of readSse(response.body)) {
+      for await (const payload of readSse(response.body, input.signal)) {
         if (!payload || payload === "[DONE]") continue;
 
         let event: unknown;

@@ -1,5 +1,7 @@
+import { raceAbort, throwIfAborted, watchAbort } from "./abort";
 import { RuntimeError } from "./errors";
 import { LIMITS } from "./limits";
+import { callPayload, formatTraceNote, persistToolEvent, resultPayload } from "./trajectory";
 import { toJsonSchemaTools } from "./tools/registry";
 import type { ProviderChunk } from "./providers/types";
 import type {
@@ -31,25 +33,43 @@ type DrainResult = {
   usage: { inputTokens: number; outputTokens: number };
 };
 
-async function drain(stream: AsyncIterable<ProviderChunk>): Promise<DrainResult> {
+async function drain(stream: AsyncIterable<ProviderChunk>, signal?: AbortSignal): Promise<DrainResult> {
   let text = "";
   const toolCalls: ToolCall[] = [];
   const usage = { inputTokens: 0, outputTokens: 0 };
+  const iter = stream[Symbol.asyncIterator]();
+  const watch = signal ? watchAbort(signal) : null;
 
-  for await (const chunk of stream) {
-    switch (chunk.type) {
-      case "text":
-        text += chunk.delta;
-        break;
-      case "tool_call":
-        toolCalls.push({ callId: chunk.callId, name: chunk.name, args: chunk.args });
-        break;
-      case "usage":
-        usage.inputTokens += chunk.inputTokens;
-        usage.outputTokens += chunk.outputTokens;
-        break;
-      case "error":
-        throw new RuntimeError("provider_failed", chunk.message, chunk.retryable);
+  try {
+    for (;;) {
+      throwIfAborted(signal);
+      const next = iter.next();
+      const { done, value: chunk } = watch
+        ? await Promise.race([next, watch.promise])
+        : await next;
+      if (done || chunk === undefined) break;
+
+      switch (chunk.type) {
+        case "text":
+          text += chunk.delta;
+          break;
+        case "tool_call":
+          toolCalls.push({ callId: chunk.callId, name: chunk.name, args: chunk.args });
+          break;
+        case "usage":
+          usage.inputTokens += chunk.inputTokens;
+          usage.outputTokens += chunk.outputTokens;
+          break;
+        case "error":
+          throw new RuntimeError("provider_failed", chunk.message, chunk.retryable);
+      }
+    }
+  } finally {
+    watch?.dispose();
+    try {
+      await iter.return?.();
+    } catch {
+      // A provider that already died should not mask the abort that stopped it.
     }
   }
 
@@ -94,6 +114,7 @@ export async function runLoop(input: LoopInput): Promise<LoopOutcome> {
 
     const result = await drain(
       ctx.provider.run({ system, messages, tools: schemas, signal: ctx.signal }),
+      ctx.signal,
     );
     usage.inputTokens += result.usage.inputTokens;
     usage.outputTokens += result.usage.outputTokens;
@@ -117,6 +138,13 @@ export async function runLoop(input: LoopInput): Promise<LoopOutcome> {
       let allowed = true;
       let reason: string | undefined;
 
+      await persistToolEvent(ctx, {
+        type: "tool/call",
+        callId: call.callId,
+        step,
+        payload: callPayload(call),
+      });
+
       if (ctx.toolCallCount >= LIMITS.maxToolCallsPerTurn) {
         allowed = false;
         reason = "tool_budget_exhausted";
@@ -136,11 +164,49 @@ export async function runLoop(input: LoopInput): Promise<LoopOutcome> {
             outcome = { data: { denied: verdict.reason ?? "not_allowed" } };
           } else {
             ctx.toolCallCount += 1;
-            outcome = await spec.execute(call.args, ctx);
-            if (spec.realAction) ctx.realActions.push(spec.id);
+            try {
+              outcome = await raceAbort(spec.execute(call.args, ctx), ctx.signal);
+              if (spec.realAction) ctx.realActions.push(spec.id);
+            } catch (err) {
+              allowed = false;
+              reason = err instanceof RuntimeError ? err.code : "exec_failed";
+              outcome = {
+                data: {
+                  error: reason,
+                  message: err instanceof Error ? err.message : String(err),
+                },
+              };
+              const ms = Date.now() - startedAt;
+              await persistToolEvent(ctx, {
+                type: "tool/result",
+                callId: call.callId,
+                step,
+                payload: resultPayload(call, outcome, { allowed, reason, ms }),
+              });
+              ctx.trace.push({
+                step,
+                tool: call.name,
+                allowed,
+                reason,
+                ms,
+                callId: call.callId,
+                args: callPayload(call).arguments,
+                result: outcome.data,
+              });
+              throw err;
+            }
           }
         }
       }
+
+      const ms = Date.now() - startedAt;
+      const payload = resultPayload(call, outcome, { allowed, reason, ms });
+      await persistToolEvent(ctx, {
+        type: "tool/result",
+        callId: call.callId,
+        step,
+        payload,
+      });
 
       await hooks.afterTool(ctx, call, outcome);
       ctx.trace.push({
@@ -148,12 +214,18 @@ export async function runLoop(input: LoopInput): Promise<LoopOutcome> {
         tool: call.name,
         allowed,
         reason,
-        ms: Date.now() - startedAt,
+        ms,
+        callId: call.callId,
+        args: callPayload(call).arguments,
+        result: payload.result,
       });
 
       messages.push(toolResultMessage(call, outcome.data));
       if (outcome.nextPrompt) messages.push({ role: "user", content: outcome.nextPrompt });
-      if (outcome.shouldExit) return { finalText, steps, usage };
+      if (outcome.shouldExit) {
+        pushTraceNote(ctx);
+        return { finalText, steps, usage };
+      }
     }
 
     if (step === LIMITS.maxSteps) {
@@ -165,5 +237,17 @@ export async function runLoop(input: LoopInput): Promise<LoopOutcome> {
     }
   }
 
+  pushTraceNote(ctx);
   return { finalText, steps, usage };
+}
+
+function pushTraceNote(ctx: RunContext): void {
+  if (!ctx.trace.length) return;
+  if (ctx.notes.some((n) => n.kind === "tool_trace")) return;
+  const note = formatTraceNote(ctx.trace);
+  ctx.notes.push({
+    kind: "tool_trace",
+    body: note.body,
+    meta: { calls: note.calls },
+  });
 }

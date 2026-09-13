@@ -136,9 +136,7 @@ export async function renderPassportImage(opts: PassportRenderOptions): Promise<
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('canvas unavailable');
 
-  const display = opts.zh
-    ? '"GBai Marker", Fredoka, "Noto Sans SC", sans-serif'
-    : 'Fredoka, Nunito, sans-serif';
+  const display = 'Cinzel, "Noto Serif SC", serif';
   const body = opts.zh
     ? '"JasonHandwriting2", Caveat, "Noto Sans SC", sans-serif'
     : 'Nunito, sans-serif';

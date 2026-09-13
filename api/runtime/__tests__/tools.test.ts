@@ -4,12 +4,13 @@ import { ToolRegistry, defineTool, toJsonSchemaTools } from "../tools/registry";
 import { TOWN_TOOLS } from "../tools/town";
 import { MEMORY_TOOLS } from "../tools/memory";
 import { A2A_TOOLS } from "../tools/a2a";
+import { HANDS_TOOLS } from "../tools/hands";
 import { slugFor } from "../tools/lib";
 import { findDish, findRecipe, RECIPES } from "../tools/data";
 import { KIND_PRESETS } from "../registry";
 import { makeContext, scriptedProvider } from "./helpers";
 
-const ALL = [...TOWN_TOOLS, ...MEMORY_TOOLS, ...A2A_TOOLS];
+const ALL = [...TOWN_TOOLS, ...MEMORY_TOOLS, ...A2A_TOOLS, ...HANDS_TOOLS];
 const registry = new ToolRegistry().register(...ALL);
 
 describe("tool registry", () => {

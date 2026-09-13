@@ -19,7 +19,8 @@
     "art:prompts": "node scripts/art/generate.mjs --dump",
     "art:probe": "node scripts/art/generate.mjs --probe",
     "art:preview": "node scripts/art/generate.mjs --preview",
-    "art:generate": "node scripts/art/generate.mjs"
+    "art:generate": "node scripts/art/generate.mjs",
+    "art:punch": "python scripts/art/punch.py"
   },
   "dependencies": {
     "@cursor/sdk": "^1.0.30",
@@ -76,9 +77,11 @@
     "react-day-picker": "^9.13.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.70.0",
+    "react-markdown": "^10.1.0",
     "react-resizable-panels": "^4.2.2",
     "react-router": "^7.6.1",
     "recharts": "^2.15.4",
+    "remark-breaks": "^4.0.0",
     "sonner": "^2.0.7",
     "superjson": "^2.2.6",
     "tailwind-merge": "^3.4.0",
