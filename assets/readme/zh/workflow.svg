@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-labelledby="title desc">
   <title id="title">How a visit works</title>
-  <desc id="desc">Chinese workflow: arrive, explore, step inside, ferry on.</desc>
+  <desc id="desc">Chinese workflow: wander the map, step inside, sign in, talk to agents.</desc>
   <defs>
     <linearGradient id="board" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#FFF9EF"/>
@@ -24,33 +24,33 @@
       <rect width="200" height="150" rx="24" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="4"/>
       <circle cx="36" cy="36" r="18" fill="#FF9B9B"/>
       <text x="36" y="42" text-anchor="middle" font-size="18" font-weight="800" fill="#FFF9EF">1</text>
-      <text x="24" y="86" font-size="22" font-weight="800" fill="#4A4470">&#25265;&#36798;</text>
-      <text x="24" y="116" font-size="16" font-weight="600" fill="#7B74A3">&#20174;&#28193;&#36718;&#23548;&#35272;</text>
-      <text x="24" y="140" font-size="16" font-weight="600" fill="#7B74A3">&#33853;&#22312;&#22320;&#22270;&#19978;</text>
+      <text x="24" y="86" font-size="22" font-weight="800" fill="#4A4470">&#38386;&#36891;</text>
+      <text x="24" y="116" font-size="16" font-weight="600" fill="#7B74A3">&#21311;&#21517;&#36887;&#22320;&#22270;</text>
+      <text x="24" y="140" font-size="16" font-weight="600" fill="#7B74A3">&#19981;&#24517;&#30331;&#24405;</text>
     </g>
     <g transform="translate(356 130)">
       <rect width="200" height="150" rx="24" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="4"/>
       <circle cx="36" cy="36" r="18" fill="#7EC8E3"/>
       <text x="36" y="42" text-anchor="middle" font-size="18" font-weight="800" fill="#FFF9EF">2</text>
       <text x="24" y="86" font-size="22" font-weight="800" fill="#4A4470">&#25506;&#32034;</text>
-      <text x="24" y="116" font-size="16" font-weight="600" fill="#7B74A3">&#24179;&#31227;&#12289;&#32553;&#25918;</text>
-      <text x="24" y="140" font-size="16" font-weight="600" fill="#7B74A3">&#24182;&#31579;&#36873;&#22320;&#26631;</text>
+      <text x="24" y="116" font-size="16" font-weight="600" fill="#7B74A3">&#25171;&#24320;&#19968;&#26641;&#24314;&#31569;</text>
+      <text x="24" y="140" font-size="16" font-weight="600" fill="#7B74A3">&#30475;&#22330;&#26223;&#19982;&#25925;&#20107;</text>
     </g>
     <g transform="translate(642 130)">
       <rect width="200" height="150" rx="24" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="4"/>
       <circle cx="36" cy="36" r="18" fill="#FFB37E"/>
       <text x="36" y="42" text-anchor="middle" font-size="18" font-weight="800" fill="#FFF9EF">3</text>
-      <text x="24" y="86" font-size="22" font-weight="800" fill="#4A4470">&#36208;&#36827;&#21435;</text>
-      <text x="24" y="116" font-size="16" font-weight="600" fill="#7B74A3">&#25171;&#24320;&#19968;&#24230;&#24314;&#31569;</text>
-      <text x="24" y="140" font-size="16" font-weight="600" fill="#7B74A3">&#30475;&#25925;&#20107;&#19982;&#24425;&#34507;</text>
+      <text x="24" y="86" font-size="22" font-weight="800" fill="#4A4470">&#30331;&#24405;</text>
+      <text x="24" y="116" font-size="16" font-weight="600" fill="#7B74A3">&#21150;&#36890;&#34892;&#35777;</text>
+      <text x="24" y="140" font-size="16" font-weight="600" fill="#7B74A3">&#25165;&#33021;&#35828;&#35805;</text>
     </g>
     <g transform="translate(928 130)">
       <rect width="200" height="150" rx="24" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="4"/>
       <circle cx="36" cy="36" r="18" fill="#FFDD94"/>
       <text x="36" y="42" text-anchor="middle" font-size="18" font-weight="800" fill="#4A4470">4</text>
-      <text x="24" y="86" font-size="22" font-weight="800" fill="#4A4470">&#20877;&#28193;&#36718;</text>
-      <text x="24" y="116" font-size="16" font-weight="600" fill="#7B74A3">&#21435;&#39118;&#38047;&#23830;&#12289;&#25163;&#36134;</text>
-      <text x="24" y="140" font-size="16" font-weight="600" fill="#7B74A3">&#25110;&#36896;&#35775;&#25351;&#21335;</text>
+      <text x="24" y="86" font-size="22" font-weight="800" fill="#4A4470">&#20132;&#35848;</text>
+      <text x="24" y="116" font-size="16" font-weight="600" fill="#7B74A3">&#38215;&#19978;&#30340;&#20195;&#29702;&#20154;</text>
+      <text x="24" y="140" font-size="16" font-weight="600" fill="#7B74A3">&#24102;&#24037;&#20855;&#19982;&#35760;&#24518;</text>
     </g>
   </g>
 </svg>

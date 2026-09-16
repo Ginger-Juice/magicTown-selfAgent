@@ -5,36 +5,40 @@
 </p>
 
 <p align="center">
-  <img src="./assets/readme/hero.svg" width="100%" alt="Summer Town — 互动海滨地图。平移小镇、点开地标，再渡轮去风铃屿。">
+  <img src="./assets/readme/hero.svg" width="100%" alt="魔法镇 — 等距小镇壳，加上可以说话的居民。">
 </p>
 
 <p align="center">
-  <a href="https://summertown.summercommences.com/"><strong>访问线上小镇 →</strong></a>
-  &nbsp;·&nbsp;
-  <a href="https://github.com/summerpapaya/summertown">GitHub</a>
+  <a href="https://github.com/Ginger-Juice/summertown-selfagent"><strong>本仓库 →</strong></a>
 </p>
 
 ---
 
-欢迎来到夏天镇！**Summer Town** 是一座（虚拟的）海边小镇的互动地图。沿水岸平移，浏览十四处地标，切换一天里的光影变化，乘坐渡轮导览，再去看看风铃屿、小镇手账和造访指南。
+**魔法镇（Magic Town）** 是一份个人 self-agent 产品。等距地图是小镇壳：可以匿名闲逛；登录之后才能和镇上的居民（agents）说话。页面后面是 Hono + tRPC 的小镇运行时。
+
+本仓库（`Ginger-Juice/summertown-selfagent`）是**独立产品**。它不是 [summerpapaya/summertown](https://github.com/summerpapaya/summertown)，也不是原来的夏天镇地图站。部分地标文案、地图美术、GitHub Pages 域名仍来自那份早期地图——那是壳的遗留，不是本仓库的产品身份。
 
 <p align="center">
-  <img src="./assets/readme/showcase.webp" width="100%" alt="Summer Town 展示：互动地图与市政厅、海风咖啡馆、魔法屋、风铃屿、Summer FM 等地标场景。">
+  <img src="./assets/readme/showcase.webp" width="100%" alt="小镇地图壳：等距地标仍是魔法镇的大门。">
 </p>
 
 <p align="center">
   <img src="./assets/readme/zh/section-explore.svg" width="100%" alt="探索地图">
 </p>
 
-### 在地图上可以做什么
+### 小镇壳
+
+匿名访客仍然可以：
 
 - 从抵达画面 **开始探索**，或 **乘坐渡轮导览**
 - **平移与缩放** 等距小镇（世界画布：2400 × 1680）
-- **打开地标**，查看场景、故事与贴纸式彩蛋
+- **打开地标**，查看场景与田野笔记
 - 按 **文化 / 美食 / 住宿 / 魔法 / 小岛** 筛选
 - 用 **日间 / 黄金时刻 / 星光** 重绘天空
 
-| 地标 | 标签 |
+十四个地图槽位仍是海边小镇的建筑。产品壳（导航、首页、代理人页）已经叫魔法镇 / Magic Town；地标故事还没有整页改写。
+
+| 地标槽位 | 标签 |
 | --- | --- |
 | 市政厅与中央花园 | 小镇之心 |
 | 海螺剧场 | 文化 |
@@ -54,52 +58,59 @@
 深链接可用 `?place=<id>`（例如 `?place=coffee`）。
 
 <p align="center">
-  <img src="./assets/readme/zh/workflow.svg" width="100%" alt="一次造访怎么走：抵达、探索、走进去、再渡轮。">
+  <img src="./assets/readme/zh/workflow.svg" width="100%" alt="一次造访怎么走：逛地图、走进建筑、登录，再和镇上的代理人说话。">
 </p>
 
 <p align="center">
   <img src="./assets/readme/zh/section-wander.svg" width="100%" alt="漫游页面">
 </p>
 
-### 地图之外的路线
+### 路线
 
 | 路线 | 内容 |
 | --- | --- |
-| [`/`](https://summertown.summercommences.com/) | 互动小镇地图 + 田野笔记 |
-| [`/windbell-isle`](https://summertown.summercommences.com/windbell-isle) | 滚动旅程：长栈桥 → 铃兰草地 → 风铃亭 → 日落点 → 灯塔 |
-| [`/journal`](https://summertown.summercommences.com/journal) | 护照索引、小镇日历、明信片墙 |
-| [`/visit`](https://summertown.summercommences.com/visit) | 渡轮时刻表、住宿、礼仪、打包清单 |
+| `/` | 互动小镇地图 + 田野笔记 |
+| `/windbell-isle` | 滚动旅程：长栈桥 → 铃兰草地 → 风铃亭 → 日落点 → 灯塔 |
+| `/journal` | 护照索引、小镇日历、明信片墙 |
+| `/visit` | 渡轮时刻表、住宿、礼仪、打包清单 |
+| `/login` | 小镇通行证 — 说话或登记代理人必须先登录 |
+| `/agents` | 镇内居民 + 你登记的代理人、对话、记忆抽屉 |
+| `/town-admin` | 小镇管理 |
+| `/apple-album` · `/apple-admin` | 每日一苹果相册（及其后台） |
+
+`/agents` 后面种了八位镇内居民（书记官、营养巫师、晨练教练、符文匠、酒保、调酒师、馆长、驻塔巫师）。对话是完整的模型循环，不是占位回复：默认走 OpenAI 兼容的 builtin provider（`.env` 默认 DeepSeek）；符文匠和馆长在 builtin 上有 jailed 工作区手；符文匠在有钥匙时走 Cursor SDK。
 
 <p align="center">
-  <img src="./assets/readme/zh/section-visit.svg" width="100%" alt="打开 Summer Town">
+  <img src="./assets/readme/zh/section-visit.svg" width="100%" alt="在本地打开魔法镇">
 </p>
 
-### 访问
+### 运行
 
-**线上**
-
-[summertown.summercommences.com](https://summertown.summercommences.com/)
-
-**本地**
+地图壳是 Vite SPA。**和代理人聊天需要 Node API 和 MySQL。** `npm run dev` 会一并把两者拉起来。
 
 ```bash
+cp .env.example .env   # 填 DATABASE_URL，以及至少一把厂商 key（默认 DeepSeek）
 npm install
-npm run dev
+npm run dev            # Vite + Hono，地址 http://localhost:3000
 ```
-
-然后打开终端里打印的 Vite 地址。
 
 ```bash
-npm run build    # 生产构建 → dist/
-npm run preview  # 预览生产构建
-npm run lint     # eslint
+npm run build          # 前端 → dist/public，API 打包 → dist/boot.js
+npm start              # 生产 Node 服务（静态文件 + /api）
+npm run check          # tsc -b
+npm run lint           # eslint
+npm test               # vitest
 ```
+
+GitHub Pages 仍只从 `main` 发布**静态前端**（`dist/public`）。那不是小镇运行时。遗留自定义域名仍是 `summertown.summercommences.com`（`CNAME` / `public/CNAME`）；本轮不动 DNS 与部署。
 
 ### 技术栈
 
-React 19 · TypeScript · Vite · Tailwind CSS · Framer Motion · GSAP · Lenis · Howler · shadcn/ui
+**壳：** React 19 · TypeScript · Vite · Tailwind CSS · Framer Motion · GSAP · Lenis · Howler · shadcn/ui
 
-通过 `.github/workflows/deploy.yml` 从 `main` 部署到 GitHub Pages（自定义域名：`summertown.summercommences.com`）。
+**小镇 OS：** Hono · tRPC · Drizzle · MySQL · `@cursor/sdk`
+
+模型 key 见 `.env.example`（默认 DeepSeek）。若要动地图素材，出图走 Google Gemini（`scripts/art/generate.mjs`），见 `.cursor/rules/art-pipeline.mdc`。
 
 ### 制作工具
 
@@ -111,6 +122,7 @@ React 19 · TypeScript · Vite · Tailwind CSS · Framer Motion · GSAP · Lenis
 
 - 更适合鼠标或触控板（自定义光标 + 地图手势）。
 - 声音可在导航栏开关；请自行控制音量。
+- 地图可匿名逛；对话和登记代理人需要通行证。
 
 ### 许可
 

@@ -5,36 +5,40 @@
 </p>
 
 <p align="center">
-  <img src="./assets/readme/hero.svg" width="100%" alt="Summer Town — interactive seaside map. Pan the town, open landmarks, and ferry to Windbell Isle.">
+  <img src="./assets/readme/hero.svg" width="100%" alt="Magic Town — isometric town shell plus residents you can talk to.">
 </p>
 
 <p align="center">
-  <a href="https://summertown.summercommences.com/"><strong>Visit the live town →</strong></a>
-  &nbsp;·&nbsp;
-  <a href="https://github.com/summerpapaya/summertown">GitHub</a>
+  <a href="https://github.com/Ginger-Juice/summertown-selfagent"><strong>This repository →</strong></a>
 </p>
 
 ---
 
-Welcome to Summer Town! **Summer Town** is an interactive map of a tiny seaside place. Pan across the waterfront, click into fourteen landmarks, change the time of day, take the ferry tour, then wander Windbell Isle, the town journal, and a visit guide.
+**Magic Town** is a personal self-agent product. The isometric map is the town shell: you can wander it anonymously. Signing in unlocks town residents (agents) with tools, memory, and a Hono + tRPC runtime behind the page.
+
+This repository (`Ginger-Juice/summertown-selfagent`) is an **independent** product. It is not [summerpapaya/summertown](https://github.com/summerpapaya/summertown), and it is not the original Summer Town map site. Some landmark copy, map art, and GitHub Pages DNS still come from that earlier map — they are leftover shell, not this repo's product identity.
 
 <p align="center">
-  <img src="./assets/readme/showcase.webp" width="100%" alt="Summer Town showcase: the interactive map surrounded by landmark scenes including Town Hall, Café Seabreeze, the Magic House, Windbell Isle, and Summer FM.">
+  <img src="./assets/readme/showcase.webp" width="100%" alt="The town map shell: isometric landmarks still used as the Magic Town front door.">
 </p>
 
 <p align="center">
   <img src="./assets/readme/section-explore.svg" width="100%" alt="Explore the map">
 </p>
 
-### What you can do on the map
+### The town shell
+
+Anonymous visitors can still:
 
 - **Start exploring** or **take the ferry tour** from the arrival screen
 - **Pan and zoom** the isometric town (world canvas: 2400 × 1680)
-- **Open landmarks** for scenes, lore, and sticky facts
+- **Open landmarks** for scenes and field notes
 - **Filter** by Culture, Food, Stay, Magic, or Isle
 - **Repaint the sky** with Day, Golden Hour, or Starlight
 
-| Landmark | Chip |
+The fourteen map slots are still the seaside-town buildings. Product chrome (nav, hero, agents) already says Magic Town / 魔法镇; landmark lore has not been rewritten.
+
+| Landmark slot | Chip |
 | --- | --- |
 | Town Hall & Central Garden | Heart of Town |
 | The Seashell Theater | Culture |
@@ -54,52 +58,59 @@ Welcome to Summer Town! **Summer Town** is an interactive map of a tiny seaside 
 Deep links work with `?place=<id>` (for example `?place=coffee`).
 
 <p align="center">
-  <img src="./assets/readme/workflow.svg" width="100%" alt="How a visit works: Arrive, Explore, Step inside, Ferry on.">
+  <img src="./assets/readme/workflow.svg" width="100%" alt="How a visit works: Wander the map, step inside a building, sign in, then talk to town agents.">
 </p>
 
 <p align="center">
   <img src="./assets/readme/section-wander.svg" width="100%" alt="Wander the pages">
 </p>
 
-### Routes beyond the map
+### Routes
 
 | Route | What it is |
 | --- | --- |
-| [`/`](https://summertown.summercommences.com/) | Interactive town map + field notes |
-| [`/windbell-isle`](https://summertown.summercommences.com/windbell-isle) | Scroll journey: pier → meadow → pavilion → sunset → lighthouse |
-| [`/journal`](https://summertown.summercommences.com/journal) | Passport index, town calendar, postcard wall |
-| [`/visit`](https://summertown.summercommences.com/visit) | Ferry timetable, stays, etiquette, packing list |
+| `/` | Interactive town map + field notes |
+| `/windbell-isle` | Scroll journey: pier → meadow → pavilion → sunset → lighthouse |
+| `/journal` | Passport index, town calendar, postcard wall |
+| `/visit` | Ferry timetable, stays, etiquette, packing list |
+| `/login` | Town pass — required to talk or register an agent |
+| `/agents` | Town residents + your registered agent, chat, memory drawer |
+| `/town-admin` | Town admin |
+| `/apple-album` · `/apple-admin` | Apple-a-day album (and its admin) |
+
+Eight seeded town agents (clerk, nutritionist, coach, rune wright, barkeeper, mixologist, librarian, tower wizard) live behind `/agents`. Chat is a full model loop (not a stub): builtin OpenAI-compatible providers by default (DeepSeek unless you change `.env`), jailed workspace hands for the rune wright and librarian, Cursor SDK wired for the rune wright when a key is present.
 
 <p align="center">
-  <img src="./assets/readme/section-visit.svg" width="100%" alt="Open Summer Town">
+  <img src="./assets/readme/section-visit.svg" width="100%" alt="Run Magic Town locally">
 </p>
 
-### Open it
+### Run it
 
-**Live**
-
-[summertown.summercommences.com](https://summertown.summercommences.com/)
-
-**Local**
+The map shell is a Vite SPA. **Agent chat needs the Node API and MySQL.** `npm run dev` starts both together.
 
 ```bash
+cp .env.example .env   # DATABASE_URL plus at least one vendor key (DeepSeek is the default)
 npm install
-npm run dev
+npm run dev            # Vite + Hono on http://localhost:3000
 ```
-
-Then open the Vite URL printed in the terminal.
 
 ```bash
-npm run build    # production build → dist/
-npm run preview  # preview the production build
-npm run lint     # eslint
+npm run build          # frontend → dist/public, API bundle → dist/boot.js
+npm start              # production Node server (static files + /api)
+npm run check          # tsc -b
+npm run lint           # eslint
+npm test               # vitest
 ```
+
+GitHub Pages still publishes **only** the static frontend (`dist/public`) from `main`. That is not the town runtime. The leftover custom domain is still `summertown.summercommences.com` (`CNAME` / `public/CNAME`); this pass does not change DNS or deploy.
 
 ### Stack
 
-React 19 · TypeScript · Vite · Tailwind CSS · Framer Motion · GSAP · Lenis · Howler · shadcn/ui
+**Shell:** React 19 · TypeScript · Vite · Tailwind CSS · Framer Motion · GSAP · Lenis · Howler · shadcn/ui
 
-Deployed to GitHub Pages from `main` via `.github/workflows/deploy.yml` (custom domain: `summertown.summercommences.com`).
+**Town OS:** Hono · tRPC · Drizzle · MySQL · `@cursor/sdk`
+
+Model keys are listed in `.env.example` (DeepSeek default). Art generation, if you touch map assets, is Google Gemini via `scripts/art/generate.mjs` — see `.cursor/rules/art-pipeline.mdc`.
 
 ### Made with
 
@@ -111,6 +122,7 @@ Deployed to GitHub Pages from `main` via `.github/workflows/deploy.yml` (custom 
 
 - Best experienced with a mouse or trackpad (custom cursor + map gestures).
 - Sound can be toggled from the navbar; respect your own volume.
+- The map is anonymous; conversations and agent registration require a town pass.
 
 ### License
 

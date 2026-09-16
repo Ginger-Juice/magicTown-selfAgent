@@ -224,7 +224,7 @@ function PassportDialog({
     };
   }, [src]);
 
-  const filename = lang === 'zh' ? '夏天镇护照.png' : 'summer-town-passport.png';
+  const filename = lang === 'zh' ? '魔法镇护照.png' : 'magic-town-passport.png';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

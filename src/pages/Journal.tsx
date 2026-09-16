@@ -6,7 +6,7 @@ import PostcardWall from '@/components/journal/PostcardWall';
 import ClosingStrip from '@/components/journal/ClosingStrip';
 
 /**
- * The Summer Town Journal (/journal) — journal.md:
+ * The town journal (/journal) — journal.md:
  * bulletin-board hero · filterable passport index · visitor trail ·
  * town calendar · postcard wall · closing strip.
  */

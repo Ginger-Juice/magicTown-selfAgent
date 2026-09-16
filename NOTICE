@@ -1,7 +1,7 @@
-Summer Town — Visual Asset Notice
-=================================
+Magic Town (this repository) — Visual Asset Notice
+==================================================
 
-Last updated: 2026
+Last updated: 2026-09
 
 1. Scope
 --------
@@ -19,11 +19,16 @@ not limited to files under `public/` such as:
 
 These assets are **not** licensed under the MIT License in `LICENSE`.
 
+This repository (`Ginger-Juice/summertown-selfagent`) is an independent Magic
+Town / self-agent product. It is not the original Summer Town map repository
+at `summerpapaya/summertown`. Some of the map art above was inherited from
+that earlier seaside map and remains in the town shell.
+
 2. How the assets were made
 ---------------------------
 
 Many of these visuals were created with **AI image-generation tools**, then
-selected, cropped, arranged, and integrated into Summer Town by the project
+selected, cropped, arranged, and integrated into the town by the project
 maintainer.
 
 Because copyright protection for AI-generated material varies by jurisdiction
@@ -39,16 +44,17 @@ To the extent rights exist in:
 - the project's overall presentation of those assets; and/or
 - any human-authored elements mixed into them,
 
-those rights are reserved by **SummerPapaya**.
+those rights are reserved by the maintainer of this repository.
 
 4. Permission / reuse request
 -----------------------------
 
-Please treat the project's visual identity as reserved for Summer Town.
+Please treat the project's visual identity as reserved for this town.
 
 You may:
 
-- view the assets as shown on the live site and in this repository;
+- view the assets as shown in this repository and any site the maintainer
+  publishes;
 - fork or study the **source code** under MIT.
 
 Please do **not**, without prior permission from the maintainer:
