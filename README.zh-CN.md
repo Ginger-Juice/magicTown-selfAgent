@@ -15,16 +15,20 @@
   <a href="https://github.com/Ginger-Juice/magictown-selfagent"><strong>GitHub →</strong></a>
 </p>
 
+
+<p align="center">
+  <img src="./assets/readme/hero.png" width="100%" alt="魔法镇 — 个人 self-agent 的等距小镇壳">
+</p>
+
+<p align="center">
+  <img src="./assets/readme/showcase.png" width="100%" alt="魔法镇一览：地图壳与镇民对话">
+</p>
+
 ---
 
 **魔法镇（Magic Town）** 是跑在本地的小镇 OS。地图是大门；`/login` 和 `/agents` 后面是 Hono + tRPC + Drizzle 运行时：八位种好的镇民（带工具和记忆）、一位访客自建代理人，以及完整的模型循环——不是地图站的占位文案。
 
 包名：`magictown-selfagent`。对外品牌：魔法镇 / Magic Town。
-
-> **TODO — README 配图。** 本环境没有 `GOOGLE_API_KEY`，魔法镇品牌图还没生成。在 `.env` 里**只**设置 `GOOGLE_API_KEY`（见 `scripts/art/env.example`；不要设 `GEMINI_API_KEY`）后运行 `npm run art:readme`。预期文件：`assets/readme/hero.png`、`showcase.png`、`runtime.png`、`section-agents.png`、`section-run.png`。不要 punch。
-
-<!-- TODO(images): npm run art:readme 会把 catalog id readme-hero 等从
-     assets/art-preview/ 拷到上面这些路径。生成后再把 hero.png / showcase.png 嵌进标题下。 -->
 
 ### 这是什么
 
@@ -42,6 +46,10 @@
 **小镇 OS：** Hono · tRPC · Drizzle · MySQL · `@cursor/sdk`
 
 模型 key 写在 `.env.example`。若要重出地图 / README 图，走 Google Gemini（`scripts/art/generate.mjs`），见 `.cursor/rules/art-pipeline.mdc`。
+
+<p align="center">
+  <img src="./assets/readme/section-run.png" width="100%" alt="本地运行魔法镇">
+</p>
 
 ### 运行
 
@@ -80,6 +88,10 @@ GitHub Pages 仍只从 `main` 发布**静态前端**（`dist/public`）。那不
 
 深链接：`/agents?agent=<id>`，`/agents?memory=<id>`。
 
+<p align="center">
+  <img src="./assets/readme/section-agents.png" width="100%" alt="镇民">
+</p>
+
 ### 镇民
 
 由 `api/agents.ts` 里的 `ensureTownAgents()` 种下。行为（工具、记忆槽、provider）在 `KIND_PRESETS`（`api/runtime/registry.ts`）。
@@ -97,6 +109,10 @@ GitHub Pages 仍只从 `main` 发布**静态前端**（`dist/public`）。那不
 | custom | 你的代理人 | 可选 | 只聊天（永远 builtin） |
 
 每位再加 `propose_memory` / `remember_insight` / `forget_insight`，以及 `ask_agent` / `tell_agent` / `handoff` / `list_town`。镇原生的 **code** 和 **study** 另有 `file_read` / `file_write` / `file_patch` / `code_run`，工作区在 `.data/workspaces/u{userId}/{slug}/` — 这是小镇划的 jail，不是访客自己的电脑。
+
+<p align="center">
+  <img src="./assets/readme/runtime.png" width="100%" alt="代理人运行时循环">
+</p>
 
 ### 运行时
 

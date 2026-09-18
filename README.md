@@ -15,17 +15,20 @@
   <a href="https://github.com/Ginger-Juice/magictown-selfagent"><strong>GitHub →</strong></a>
 </p>
 
+
+<p align="center">
+  <img src="./assets/readme/hero.png" width="100%" alt="Magic Town — isometric town shell for personal self-agents">
+</p>
+
+<p align="center">
+  <img src="./assets/readme/showcase.png" width="100%" alt="Magic Town showcase: map shell and resident chat">
+</p>
+
 ---
 
 **Magic Town** (魔法镇) is a local town OS. The map is the front door. Behind `/login` and `/agents` sits a Hono + tRPC + Drizzle runtime: eight seeded residents with tools and memory, one visitor-registered agent, and a real model loop — not canned map-site copy.
 
 Package name: `magictown-selfagent`. Human brand: Magic Town / 魔法镇.
-
-> **TODO — README images.** This environment had no `GOOGLE_API_KEY`, so the Magic Town brand frames were not generated. After setting **only** `GOOGLE_API_KEY` in `.env` (see `scripts/art/env.example`; do not set `GEMINI_API_KEY`), run `npm run art:readme`. Expected files: `assets/readme/hero.png`, `showcase.png`, `runtime.png`, `section-agents.png`, `section-run.png`. Do not punch them.
-
-<!-- TODO(images): npm run art:readme copies catalog ids readme-hero, readme-showcase,
-     readme-runtime, readme-section-agents, readme-section-run from assets/art-preview/
-     into the paths above. Then embed hero.png and showcase.png under the title. -->
 
 ### What it is
 
@@ -43,6 +46,10 @@ Wander the map anonymously. Conversations and agent registration need `/login`.
 **Town OS:** Hono · tRPC · Drizzle · MySQL · `@cursor/sdk`
 
 Model keys live in `.env.example`. Map/README art, if you regenerate it, is Google Gemini via `scripts/art/generate.mjs` — see `.cursor/rules/art-pipeline.mdc`.
+
+<p align="center">
+  <img src="./assets/readme/section-run.png" width="100%" alt="Run Magic Town locally">
+</p>
 
 ### Run it
 
@@ -81,6 +88,10 @@ GitHub Pages from `main` still publishes **only** the static frontend (`dist/pub
 
 Deep links: `/agents?agent=<id>`, `/agents?memory=<id>`.
 
+<p align="center">
+  <img src="./assets/readme/section-agents.png" width="100%" alt="Town residents">
+</p>
+
 ### Town residents
 
 Seeded by `ensureTownAgents()` in `api/agents.ts`. Behaviour (tools, memory slots, provider) lives in `KIND_PRESETS` (`api/runtime/registry.ts`).
@@ -98,6 +109,10 @@ Seeded by `ensureTownAgents()` in `api/agents.ts`. Behaviour (tools, memory slot
 | custom | your agent | optional | chat only (always builtin) |
 
 Everyone also gets `propose_memory` / `remember_insight` / `forget_insight` and `ask_agent` / `tell_agent` / `handoff` / `list_town`. Town-native **code** and **study** get `file_read` / `file_write` / `file_patch` / `code_run` against `.data/workspaces/u{userId}/{slug}/` — a jail, not the visitor’s own machine.
+
+<p align="center">
+  <img src="./assets/readme/runtime.png" width="100%" alt="Agent runtime loop">
+</p>
 
 ### Runtime
 
