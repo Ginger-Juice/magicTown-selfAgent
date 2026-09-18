@@ -1,5 +1,5 @@
 /**
- * Summer Town — English dictionary (source of truth).
+ * Magic Town — English dictionary (source of truth).
  * zh.ts must mirror this exact shape (enforced via DeepL10n<Messages>).
  * Interpolation: t('map.passport', { n: 3 }) replaces {n}.
  */
@@ -517,7 +517,7 @@ export const en = {
       openOnMap: 'Open on map',
       completeHint: 'All fourteen — time to print your passport.',
       make: 'Make passport',
-      dialogTitle: 'Summer Town Passport',
+      dialogTitle: 'Magic Town Passport',
       dialogDesc: 'Fourteen stamps, issued by Window 1 of the Harbor Office. Pick a cover from the town map or a landmark illustration.',
       coverLegend: 'Cover illustration',
       covers: {
@@ -651,11 +651,11 @@ export const en = {
       kicker: 'The ferry',
       title: 'The M.V. Bellweather runs on tide-time.',
       hand: '(she has never missed a sunset)',
-      company: 'Summer Town Ferry Co.',
+      company: 'Magic Town Ferry Co.',
       companySub: 'Crossings daily, tide permitting. Tide always permits.',
       thTide: 'Tide',
-      thOut: 'Depart Mainland → Summer Town',
-      thBack: 'Depart Summer Town → Mainland',
+      thOut: 'Depart Mainland → Magic Town',
+      thBack: 'Depart Magic Town → Mainland',
       tableAria: 'Ferry timetable',
       rows: ['Morning tide', 'Midday tide', 'Golden tide'],
       theGoodOne: 'the good one',
@@ -741,7 +741,7 @@ export const en = {
     },
     postcards: {
       kicker: 'The mailboat',
-      title: 'Postcards from Summer Town',
+      title: 'Postcards from Magic Town',
       body: 'One email per tide. Mostly pictures of the lighthouse being right about the weather.',
       emailLabel: 'Email address',
       placeholder: 'you@somewhere.sea',
@@ -751,13 +751,13 @@ export const en = {
       successBody: 'First postcard leaves with the next tide.',
       madeOf: 'made of:',
       ingredients: ['sea salt', 'sunlight', '555 pier planks','505 lilies of the valley','one (1) mysterious key', 'bells'],
-      colophon: 'Summer Town exists somewhere between the tide chart and the storybooks. Built with love and questionable engineering.',
+      colophon: 'Magic Town exists somewhere between the tide chart and the storybooks. Built with love and questionable engineering.',
     },
   },
   apple: {
-    backToTown: '← Back to Summer Town',
+    backToTown: '← Back to Magic Town',
     title: '🍎 An Apple A Day',
-    subtitle: 'one little apple, every single day, from the Summer Town orchard',
+    subtitle: 'one little apple, every single day, from the Magic Town orchard',
     calendar: 'Calendar',
     gallery: 'Gallery',
     prevMonth: 'Previous month',

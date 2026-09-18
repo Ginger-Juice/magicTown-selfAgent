@@ -4,115 +4,147 @@
   <a href="./README.zh-CN.md"><img src="./assets/readme/badge-zh-off.svg" height="36" alt="中文"></a>
 </p>
 
+<h1 align="center">Magic Town</h1>
+
 <p align="center">
-  <img src="./assets/readme/hero.svg" width="100%" alt="Summer Town — interactive seaside map. Pan the town, open landmarks, and ferry to Windbell Isle.">
+  <strong>magictown-selfagent</strong><br>
+  A personal self-agent product: an isometric town shell, plus residents you can actually talk to.
 </p>
 
 <p align="center">
-  <a href="https://summertown.summercommences.com/"><strong>Visit the live town →</strong></a>
-  &nbsp;·&nbsp;
-  <a href="https://github.com/summerpapaya/summertown">GitHub</a>
+  <a href="https://github.com/Ginger-Juice/magictown-selfagent"><strong>GitHub →</strong></a>
+</p>
+
+
+<p align="center">
+  <img src="./assets/readme/hero.png" width="100%" alt="Magic Town — isometric town shell for personal self-agents">
+</p>
+
+<p align="center">
+  <img src="./assets/readme/showcase.png" width="100%" alt="Magic Town showcase: map shell and resident chat">
 </p>
 
 ---
 
-Welcome to Summer Town! **Summer Town** is an interactive map of a tiny seaside place. Pan across the waterfront, click into fourteen landmarks, change the time of day, take the ferry tour, then wander Windbell Isle, the town journal, and a visit guide.
+**Magic Town** (魔法镇) is a local town OS. The map is the front door. Behind `/login` and `/agents` sits a Hono + tRPC + Drizzle runtime: eight seeded residents with tools and memory, one visitor-registered agent, and a real model loop — not canned map-site copy.
 
-<p align="center">
-  <img src="./assets/readme/showcase.webp" width="100%" alt="Summer Town showcase: the interactive map surrounded by landmark scenes including Town Hall, Café Seabreeze, the Magic House, Windbell Isle, and Summer FM.">
-</p>
+Package name: `magictown-selfagent`. Human brand: Magic Town / 魔法镇.
 
-<p align="center">
-  <img src="./assets/readme/section-explore.svg" width="100%" alt="Explore the map">
-</p>
+### What it is
 
-### What you can do on the map
+- **Town shell** — Vite / React isometric map. `/` currently mounts `DebugMap` (painted map + “Edit layout”), not the visitor `TownMap`. Login and agents stay in the nav. Landmark lore and much of the map art are still leftover seaside-town scenery; they are not this product’s identity.
+- **Town residents** — eight seeded agents on `/agents`. Chat is a full builtin (OpenAI-compatible) loop. Default vendor is DeepSeek (`.env.example`).
+- **Your agent** — after a town pass, you may register one custom agent.
+- **Town OS** — Hono API (`api/boot.ts`), tRPC, Drizzle/MySQL, memory, A2A envelopes, jailed workspaces, optional Cursor SDK for the rune wright.
 
-- **Start exploring** or **take the ferry tour** from the arrival screen
-- **Pan and zoom** the isometric town (world canvas: 2400 × 1680)
-- **Open landmarks** for scenes, lore, and sticky facts
-- **Filter** by Culture, Food, Stay, Magic, or Isle
-- **Repaint the sky** with Day, Golden Hour, or Starlight
-
-| Landmark | Chip |
-| --- | --- |
-| Town Hall & Central Garden | Heart of Town |
-| The Seashell Theater | Culture |
-| The Gullwing Livehouse | Culture · Night |
-| Nook & Cranny General Store | Food & Goods |
-| The Pearl Gallery | Culture |
-| Café Seabreeze | Food |
-| Summer FM 105.5 | On Air |
-| The Tidepool Library | Culture |
-| Paper Boat Design Lab | Make |
-| The Apple Cottage | Food · Home |
-| The Magic House | Magic |
-| Hotel Horizon | Stay |
-| The Three Villas | Stay |
-| Windbell Isle | Isle |
-
-Deep links work with `?place=<id>` (for example `?place=coffee`).
-
-<p align="center">
-  <img src="./assets/readme/workflow.svg" width="100%" alt="How a visit works: Arrive, Explore, Step inside, Ferry on.">
-</p>
-
-<p align="center">
-  <img src="./assets/readme/section-wander.svg" width="100%" alt="Wander the pages">
-</p>
-
-### Routes beyond the map
-
-| Route | What it is |
-| --- | --- |
-| [`/`](https://summertown.summercommences.com/) | Interactive town map + field notes |
-| [`/windbell-isle`](https://summertown.summercommences.com/windbell-isle) | Scroll journey: pier → meadow → pavilion → sunset → lighthouse |
-| [`/journal`](https://summertown.summercommences.com/journal) | Passport index, town calendar, postcard wall |
-| [`/visit`](https://summertown.summercommences.com/visit) | Ferry timetable, stays, etiquette, packing list |
-
-<p align="center">
-  <img src="./assets/readme/section-visit.svg" width="100%" alt="Open Summer Town">
-</p>
-
-### Open it
-
-**Live**
-
-[summertown.summercommences.com](https://summertown.summercommences.com/)
-
-**Local**
-
-```bash
-npm install
-npm run dev
-```
-
-Then open the Vite URL printed in the terminal.
-
-```bash
-npm run build    # production build → dist/
-npm run preview  # preview the production build
-npm run lint     # eslint
-```
+Wander the map anonymously. Conversations and agent registration need `/login`.
 
 ### Stack
 
-React 19 · TypeScript · Vite · Tailwind CSS · Framer Motion · GSAP · Lenis · Howler · shadcn/ui
+**Shell:** React 19 · TypeScript · Vite · Tailwind CSS · Framer Motion · GSAP · Lenis · Howler · shadcn/ui
 
-Deployed to GitHub Pages from `main` via `.github/workflows/deploy.yml` (custom domain: `summertown.summercommences.com`).
+**Town OS:** Hono · tRPC · Drizzle · MySQL · `@cursor/sdk`
 
-### Made with
+Model keys live in `.env.example`. Map/README art, if you regenerate it, is Google Gemini via `scripts/art/generate.mjs` — see `.cursor/rules/art-pipeline.mdc`.
 
-- Vibe coding: [Kimi K3 Swarm](https://www.kimi.com/)
-- README writing: Cursor Grok 4.5
-- README design: [beautify-github-readme](https://github.com/oil-oil/beautify-github-readme)
+<p align="center">
+  <img src="./assets/readme/section-run.png" width="100%" alt="Run Magic Town locally">
+</p>
+
+### Run it
+
+The map shell is a Vite SPA. **Agent chat needs the Node API and MySQL.** `npm run dev` starts both (Vite + Hono on port 3000).
+
+```bash
+git clone https://github.com/Ginger-Juice/magictown-selfagent
+cd magictown-selfagent
+cp .env.example .env   # DATABASE_URL plus at least one vendor key (DeepSeek is the default)
+npm install
+npm run dev            # http://localhost:3000
+```
+
+```bash
+npm run build          # frontend → dist/public, API bundle → dist/boot.js
+npm start              # production Node server (static files + /api)
+npm run check          # tsc -b
+npm run lint           # eslint
+npm test               # vitest
+```
+
+GitHub Pages from `main` still publishes **only** the static frontend (`dist/public`). That is not the town runtime. The leftover Pages hostname is still `summertown.summercommences.com` (`CNAME` / `public/CNAME`); this pass does not change DNS or deploy.
+
+### Routes
+
+| Route | What it is |
+| --- | --- |
+| `/` | Painted map layout workshop (`DebugMap`). Landmark chat exists here; visitor `TownMap` is not mounted. |
+| `/login` | Town pass — required to talk or register an agent |
+| `/agents` | Seeded residents + your registered agent, chat, memory drawer |
+| `/town-admin` | Town admin |
+| `/journal` | Passport index, calendar, postcard wall, visitor trail |
+| `/visit` | Ferry / stay / etiquette pages (inherited map-shell copy) |
+| `/windbell-isle` | Scroll journey (inherited isle shell) |
+| `/apple-album` · `/apple-admin` | Apple-a-day album and its admin |
+
+Deep links: `/agents?agent=<id>`, `/agents?memory=<id>`.
+
+<p align="center">
+  <img src="./assets/readme/section-agents.png" width="100%" alt="Town residents">
+</p>
+
+### Town residents
+
+Seeded by `ensureTownAgents()` in `api/agents.ts`. Behaviour (tools, memory slots, provider) lives in `KIND_PRESETS` (`api/runtime/registry.ts`).
+
+| Kind | Resident | Landmark slot | Tools (plus shared memory / A2A) |
+| --- | --- | --- | --- |
+| work | 书记官 (clerk) | town-hall | `add_task`, `list_tasks` |
+| diet | 营养巫师 (nutritionist) | coffee | `log_meal`, `lookup_dish` |
+| fitness | 晨练教练 (coach) | hotel | `log_workout`, `suggest_plan` |
+| code | 符文匠 (rune wright) | design-lab | `save_snippet` + jailed hands; Cursor SDK when a key is present |
+| social | 夜枭酒保 (barkeeper) | livehouse | `list_events`, `post_bulletin` |
+| mixology | 调酒师 (mixologist) | livehouse | `recommend_drink`, `lookup_recipe`, `log_taste` |
+| study | 禁书塔馆长 (librarian) | library | `search_library`, `make_reading_plan`, `log_progress` + jailed hands |
+| divination | 驻塔巫师 (tower wizard) | magic-house | tarot draw / lookup / log |
+| custom | your agent | optional | chat only (always builtin) |
+
+Everyone also gets `propose_memory` / `remember_insight` / `forget_insight` and `ask_agent` / `tell_agent` / `handoff` / `list_town`. Town-native **code** and **study** get `file_read` / `file_write` / `file_patch` / `code_run` against `.data/workspaces/u{userId}/{slug}/` — a jail, not the visitor’s own machine.
+
+<p align="center">
+  <img src="./assets/readme/runtime.png" width="100%" alt="Agent runtime loop">
+</p>
+
+### Runtime
+
+`sendMessage` is a real loop (`api/runtime/`): lock → prompt → up to 8 tool steps → memory digest → optional A2A. Builtin providers speak OpenAI-compatible `/chat/completions`. Cursor is wired for the rune wright only; without `providerOptions.cursorApiKey` (or `CURSOR_API_KEY`) that resident falls back to builtin.
+
+Still true in this tree: chat is synchronous (not SSE). Cursor local hands need a per-agent key.
+
+### Art pipeline
+
+Map cutouts and README brand frames share one Google Gemini pipeline. Set **only** `GOOGLE_API_KEY` (see `scripts/art/env.example`). Do not also set `GEMINI_API_KEY`.
+
+```bash
+npm run art:list
+npm run art:readme          # Magic Town README frames → assets/art-preview + assets/readme/
+npm run art:generate -- --ids b-townhall
+npm run art:punch -- b-townhall.png   # cutouts only; flood-fill into public/
+```
+
+Punch is for black-background cutouts. Do not punch README scenes.
 
 ### Notes
 
-- Best experienced with a mouse or trackpad (custom cursor + map gestures).
-- Sound can be toggled from the navbar; respect your own volume.
+- Best with a mouse or trackpad (custom cursor + map gestures).
+- Sound toggles from the navbar.
+- Landmark names and GitHub Pages DNS still carry leftover seaside-map labels. Product chrome already says Magic Town / 魔法镇.
 
 ### License
 
 - **Source code** is released under the [MIT License](./LICENSE).
 - **Visual assets** under `public/` (map art, landmarks, scenes, logos, cursors) are **not** MIT-licensed. Many were created with AI assistance; please do not reuse them as standalone assets or project branding without permission. See [NOTICE](./NOTICE).
+
+### Made with
+
+- Vibe coding: [Kimi K3 Swarm](https://www.kimi.com/)
+- README writing: Cursor Grok 4.6

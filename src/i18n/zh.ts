@@ -4,7 +4,7 @@ import type { Messages } from './en';
 export type DeepL10n<T> = T extends string ? string : { [K in keyof T]: DeepL10n<T[K]> };
 
 /**
- * Summer Town — 简体中文词典。结构与 en.ts 完全一致（DeepL10n<Messages> 强制），
+ * 魔法镇 — 简体中文词典。结构与 en.ts 完全一致（DeepL10n<Messages> 强制），
  * 缺 key 会直接编译报错。语气：像绘本作者用中文写的，温暖、俏皮、口语化。
  */
 export const zh: DeepL10n<Messages> = {
@@ -463,7 +463,7 @@ export const zh: DeepL10n<Messages> = {
       openOnMap: '在地图上打开',
       completeHint: '十四枚都齐了——可以印护照啦。',
       make: '生成护照',
-      dialogTitle: '夏天镇护照',
+      dialogTitle: '魔法镇护照',
       dialogDesc: '十四枚印章，由港务室 1 号窗口签发。可从小镇全景或十四座地标插画里挑一张做封面。',
       coverLegend: '封面配图',
       covers: {
@@ -597,11 +597,11 @@ export const zh: DeepL10n<Messages> = {
       kicker: '渡船',
       title: '「好天气号」按潮汐表启航。',
       hand: '（她一场日落也没耽误过）',
-      company: '夏天镇渡船公司',
+      company: '魔法镇渡船公司',
       companySub: '每日往返，潮水准许的话。潮水回回都准许。',
       thTide: '潮汐',
-      thOut: '出发 大陆 → 夏天镇',
-      thBack: '出发 夏天镇 → 大陆',
+      thOut: '出发 大陆 → 魔法镇',
+      thBack: '出发 魔法镇 → 大陆',
       tableAria: '渡船时刻表',
       rows: ['早潮', '午潮', '黄金潮'],
       theGoodOne: '最棒的一班',
@@ -687,7 +687,7 @@ export const zh: DeepL10n<Messages> = {
     },
     postcards: {
       kicker: '邮船',
-      title: '夏天镇来信',
+      title: '魔法镇来信',
       body: '一次涨潮一封信，大多图片是关于灯塔又一次说对了天气。',
       emailLabel: '邮箱地址',
       placeholder: '你@某处.海',
@@ -697,13 +697,13 @@ export const zh: DeepL10n<Messages> = {
       successBody: '第一张明信片随下一次潮水出发。',
       madeOf: '本镇成分：',
       ingredients: ['海盐', '阳光', '555 块长堤木板', '505朵铃兰','一（1）把神秘钥匙', '铃铛'],
-      colophon: '夏天镇就在潮汐与故事之间的某个地方。用爱，以及不太靠谱的工程学建成。',
+      colophon: '魔法镇就在潮汐与故事之间的某个地方。用爱，以及不太靠谱的工程学建成。',
     },
   },
   apple: {
-    backToTown: '「← 回到夏天镇」',
+    backToTown: '「← 回到魔法镇」',
     title: '🍎 一天一苹果',
-    subtitle: '每天一颗小苹果，来自夏天镇的果园',
+    subtitle: '每天一颗小苹果，来自魔法镇的果园',
     calendar: '日历',
     gallery: '照片墙',
     prevMonth: '上个月',

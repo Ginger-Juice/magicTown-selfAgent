@@ -1,5 +1,5 @@
 /**
- * Summer Town — landmark registry.
+ * Town landmark registry.
  * World coordinate space: 2400 x 1680 (canvas extended +80 at the northern sea edge).
  * Anchors + zoom factors from home.md §2.2; copy from home.md §5.
  *
