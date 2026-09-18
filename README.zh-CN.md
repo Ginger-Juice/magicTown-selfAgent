@@ -12,14 +12,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Ginger-Juice/summertown-selfagent"><strong>GitHub →</strong></a>
+  <a href="https://github.com/Ginger-Juice/magictown-selfagent"><strong>GitHub →</strong></a>
 </p>
 
 ---
 
 **魔法镇（Magic Town）** 是跑在本地的小镇 OS。地图是大门；`/login` 和 `/agents` 后面是 Hono + tRPC + Drizzle 运行时：八位种好的镇民（带工具和记忆）、一位访客自建代理人，以及完整的模型循环——不是地图站的占位文案。
 
-包名：`magictown-selfagent`。对外品牌：魔法镇 / Magic Town。GitHub 远程仓库名可能仍是 `Ginger-Juice/summertown-selfagent`；本轮不改 GitHub 仓库名。
+包名：`magictown-selfagent`。对外品牌：魔法镇 / Magic Town。
 
 > **TODO — README 配图。** 本环境没有 `GOOGLE_API_KEY`，魔法镇品牌图还没生成。在 `.env` 里**只**设置 `GOOGLE_API_KEY`（见 `scripts/art/env.example`；不要设 `GEMINI_API_KEY`）后运行 `npm run art:readme`。预期文件：`assets/readme/hero.png`、`showcase.png`、`runtime.png`、`section-agents.png`、`section-run.png`。不要 punch。
 
@@ -48,7 +48,7 @@
 地图壳是 Vite SPA。**和代理人聊天需要 Node API 和 MySQL。** `npm run dev` 会一并把两者拉起来（Vite + Hono，端口 3000）。
 
 ```bash
-git clone https://github.com/Ginger-Juice/summertown-selfagent magictown-selfagent
+git clone https://github.com/Ginger-Juice/magictown-selfagent
 cd magictown-selfagent
 cp .env.example .env   # 填 DATABASE_URL，以及至少一把厂商 key（默认 DeepSeek）
 npm install

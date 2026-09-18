@@ -12,14 +12,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Ginger-Juice/summertown-selfagent"><strong>GitHub →</strong></a>
+  <a href="https://github.com/Ginger-Juice/magictown-selfagent"><strong>GitHub →</strong></a>
 </p>
 
 ---
 
 **Magic Town** (魔法镇) is a local town OS. The map is the front door. Behind `/login` and `/agents` sits a Hono + tRPC + Drizzle runtime: eight seeded residents with tools and memory, one visitor-registered agent, and a real model loop — not canned map-site copy.
 
-Package name: `magictown-selfagent`. Human brand: Magic Town / 魔法镇. The GitHub remote may still be `Ginger-Juice/summertown-selfagent`; this pass does not rename the GitHub repository.
+Package name: `magictown-selfagent`. Human brand: Magic Town / 魔法镇.
 
 > **TODO — README images.** This environment had no `GOOGLE_API_KEY`, so the Magic Town brand frames were not generated. After setting **only** `GOOGLE_API_KEY` in `.env` (see `scripts/art/env.example`; do not set `GEMINI_API_KEY`), run `npm run art:readme`. Expected files: `assets/readme/hero.png`, `showcase.png`, `runtime.png`, `section-agents.png`, `section-run.png`. Do not punch them.
 
@@ -49,7 +49,7 @@ Model keys live in `.env.example`. Map/README art, if you regenerate it, is Goog
 The map shell is a Vite SPA. **Agent chat needs the Node API and MySQL.** `npm run dev` starts both (Vite + Hono on port 3000).
 
 ```bash
-git clone https://github.com/Ginger-Juice/summertown-selfagent magictown-selfagent
+git clone https://github.com/Ginger-Juice/magictown-selfagent
 cd magictown-selfagent
 cp .env.example .env   # DATABASE_URL plus at least one vendor key (DeepSeek is the default)
 npm install
