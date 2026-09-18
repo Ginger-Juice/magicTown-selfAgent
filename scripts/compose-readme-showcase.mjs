@@ -1,5 +1,7 @@
 /**
- * Compose Summer Town README showcase from real map + landmark cutouts + scenes.
+ * Compose a README showcase from the inherited map shell + landmark cutouts.
+ * Prefer `npm run art:readme` (Google Gemini catalog ids `readme-*`) for Magic Town
+ * brand frames. This compositor is leftover map-shell tooling.
  * Outputs: assets/readme/showcase.webp (and optional PNG).
  */
 import sharp from 'sharp';

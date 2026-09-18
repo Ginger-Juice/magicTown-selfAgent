@@ -1,5 +1,5 @@
-Magic Town (this repository) — Visual Asset Notice
-==================================================
+Magic Town / magictown-selfagent — Visual Asset Notice
+======================================================
 
 Last updated: 2026-09
 
@@ -19,10 +19,10 @@ not limited to files under `public/` such as:
 
 These assets are **not** licensed under the MIT License in `LICENSE`.
 
-This repository (`Ginger-Juice/summertown-selfagent`) is an independent Magic
-Town / self-agent product. It is not the original Summer Town map repository
-at `summerpapaya/summertown`. Some of the map art above was inherited from
-that earlier seaside map and remains in the town shell.
+This repository is the personal Magic Town (`magictown-selfagent`) product.
+The GitHub remote may still be named `Ginger-Juice/summertown-selfagent`.
+Some of the map art above was inherited from an earlier seaside map and
+remains in the town shell; that is leftover scenery, not this product's brand.
 
 2. How the assets were made
 ---------------------------

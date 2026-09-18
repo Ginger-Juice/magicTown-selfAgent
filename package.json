@@ -1,5 +1,5 @@
 {
-  "name": "summertown-selfagent",
+  "name": "magictown-selfagent",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -20,6 +20,7 @@
     "art:probe": "node scripts/art/generate.mjs --probe",
     "art:preview": "node scripts/art/generate.mjs --preview",
     "art:generate": "node scripts/art/generate.mjs",
+    "art:readme": "node scripts/art/generate.mjs --readme",
     "art:punch": "python scripts/art/punch.py"
   },
   "dependencies": {
