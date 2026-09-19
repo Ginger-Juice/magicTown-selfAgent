@@ -86,7 +86,7 @@ export default function LandmarkDiorama({
           <button
             type="button"
             onClick={onBack}
-            className="pointer-events-auto inline-flex items-center gap-2 rounded-full border-[3px] border-white bg-paper/92 px-4 py-2 text-sm font-extrabold text-ink shadow-sticker"
+            className="pointer-events-auto inline-flex items-center gap-2 rounded-full border-[3px] border-white bg-[rgba(243,230,200,0.94)] px-4 py-2 text-sm font-extrabold text-ink shadow-sticker"
           >
             <ArrowLeft className="h-4 w-4" />
             {t('map.diorama.back')}
@@ -101,7 +101,7 @@ export default function LandmarkDiorama({
           </button>
         </div>
         <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2">
-          <div className="rounded-full border-[3px] border-white bg-paper/90 px-5 py-2 text-center text-sm font-extrabold text-ink shadow-sticker">
+          <div className="rounded-full border-[3px] border-white bg-[rgba(243,230,200,0.94)] px-5 py-2 text-center text-sm font-extrabold text-ink shadow-sticker">
             {name}
             <span className="mt-0.5 block text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-ink-soft">
               {t('map.diorama.hint')}
