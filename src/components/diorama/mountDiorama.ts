@@ -44,10 +44,10 @@ export interface DioramaPreset {
 export const DIORAMA_PRESETS: Record<DioramaKind, DioramaPreset> = {
   'town-hall-garden': {
     background: 0xf3efe6,
-    cameraFov: 36,
-    cameraPosition: [-7.2, 8.2, 8.6],
-    target: [0.1, 2.05, 0.2],
-    minDistance: 6.2,
+    cameraFov: 32,
+    cameraPosition: [-10.2, 6.2, 12.0],
+    target: [0.1, 2.55, 0.2],
+    minDistance: 7.4,
     maxDistance: 18,
     minPolarAngle: 0.22,
     maxPolarAngle: Math.PI * 0.46,
@@ -206,8 +206,8 @@ export function mountDiorama(
         obj.castShadow = true;
         obj.receiveShadow = true;
         eachMaterial(obj, (mat) => {
-          if (mat.emissive && (mat.emissiveIntensity ?? 0) > 3.2) {
-            mat.emissiveIntensity = 3.2;
+          if (mat.emissive && (mat.emissiveIntensity ?? 0) > 4.2) {
+            mat.emissiveIntensity = 4.2;
           }
           if (mat.name && /glass|water/i.test(`${mat.name}${obj.name}`)) {
             mat.transparent = true;

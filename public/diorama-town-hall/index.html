@@ -34,8 +34,8 @@
       const scene = new THREE.Scene();
       scene.background = new THREE.Color(0xf3efe6);
 
-      const camera = new THREE.PerspectiveCamera(36, innerWidth / innerHeight, 0.05, 80);
-      camera.position.set(-7.2, 8.2, 8.6);
+      const camera = new THREE.PerspectiveCamera(32, innerWidth / innerHeight, 0.05, 80);
+      camera.position.set(-10.2, 6.2, 12.0);
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
       renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -49,8 +49,8 @@
 
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
-      controls.target.set(0.1, 2.05, 0.2);
-      controls.minDistance = 6.2;
+      controls.target.set(0.1, 2.55, 0.2);
+      controls.minDistance = 7.4;
       controls.maxDistance = 18;
       controls.maxPolarAngle = Math.PI * 0.46;
 

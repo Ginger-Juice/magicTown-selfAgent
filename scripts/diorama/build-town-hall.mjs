@@ -181,22 +181,19 @@ function timber(w, h, d, x, y, z, rx = 0, ry = 0, rz = 0) {
 }
 
 function windowPane(w, h, x, y, z, facing) {
-  const depth = 0.08;
-  const frameT = 0.055;
-  let bw = w;
-  let bd = depth;
-  if (facing === 'x') {
-    bw = depth;
-    bd = w;
-  }
-  rbox(bw + frameT * 2, h + frameT * 2, bd + 0.02, MAT.frame, x, y, z, 0.04, 1);
-  rbox(bw * 0.72, h * 0.72, bd * 1.15, MAT.window, x, y, z, 0.03, 1);
-  if (facing === 'x') {
-    rbox(0.025, h * 0.7, 0.03, MAT.mullion, x, y, z);
-    rbox(0.025, 0.03, w * 0.7, MAT.mullion, x, y, z);
+  const lip = 0.05;
+  if (facing === 'x' || facing === '-x') {
+    const out = facing === '-x' ? -1 : 1;
+    rbox(0.04, h + lip * 2, w + lip * 2, MAT.frame, x, y, z, 0.018, 1);
+    rbox(0.018, h * 0.86, w * 0.86, MAT.window, x + out * 0.02, y, z, 0.01, 1);
+    rbox(0.012, h * 0.86, 0.016, MAT.mullion, x + out * 0.03, y, z, 0.005, 1);
+    rbox(0.012, 0.016, w * 0.86, MAT.mullion, x + out * 0.03, y, z, 0.005, 1);
   } else {
-    rbox(0.03, h * 0.7, 0.025, MAT.mullion, x, y, z);
-    rbox(w * 0.7, 0.03, 0.025, MAT.mullion, x, y, z);
+    const out = facing === '-z' ? -1 : 1;
+    rbox(w + lip * 2, h + lip * 2, 0.04, MAT.frame, x, y, z, 0.018, 1);
+    rbox(w * 0.86, h * 0.86, 0.018, MAT.window, x, y, z + out * 0.02, 0.01, 1);
+    rbox(0.016, h * 0.86, 0.012, MAT.mullion, x, y, z + out * 0.03, 0.005, 1);
+    rbox(w * 0.86, 0.016, 0.012, MAT.mullion, x, y, z + out * 0.03, 0.005, 1);
   }
 }
 
@@ -221,15 +218,21 @@ function clockFace(x, y, z, facing) {
     add(tick, group);
   }
 
-  const hour = new THREE.Mesh(new RoundedBoxGeometry(0.032, 0.13, 0.016, 1, 0.006), MAT.hand);
-  hour.position.set(0.03, 0.04, 0.02);
-  hour.rotation.z = 0.55;
+  const hourGeo = new RoundedBoxGeometry(0.03, 0.12, 0.014, 1, 0.005);
+  hourGeo.translate(0, 0.06, 0);
+  const hour = new THREE.Mesh(hourGeo, MAT.hand);
+  hour.rotation.z = 0.52;
+  hour.position.z = 0.02;
   add(hour, group);
-  const minute = new THREE.Mesh(new RoundedBoxGeometry(0.024, 0.19, 0.016, 1, 0.005), MAT.hand);
-  minute.position.set(-0.04, 0.07, 0.022);
-  minute.rotation.z = -0.35;
+  const minuteGeo = new RoundedBoxGeometry(0.022, 0.18, 0.014, 1, 0.004);
+  minuteGeo.translate(0, 0.09, 0);
+  const minute = new THREE.Mesh(minuteGeo, MAT.hand);
+  minute.rotation.z = -0.42;
+  minute.position.z = 0.022;
   add(minute, group);
-  add(new THREE.Mesh(new THREE.SphereGeometry(0.022, 12, 10), MAT.hand), group).position.z = 0.024;
+  const hub = new THREE.Mesh(new THREE.SphereGeometry(0.02, 12, 10), MAT.hand);
+  hub.position.z = 0.024;
+  add(hub, group);
 }
 
 function vine(points, radius = 0.075) {
@@ -361,12 +364,12 @@ function buildWings() {
   timber(0.1, 1.32, 0.1, eastX, eaves + 0.7, right.cz, 0.62, 0, 0);
   timber(0.1, 1.32, 0.1, eastX, eaves + 0.7, right.cz, -0.62, 0, 0);
 
-  windowPane(0.34, 0.44, westX - 0.02, 1.84, left.cz - 0.55, 'x');
-  windowPane(0.34, 0.44, westX - 0.02, 1.84, left.cz + 0.55, 'x');
-  windowPane(0.34, 0.44, westX - 0.02, 0.74, left.cz - 0.55, 'x');
-  windowPane(0.34, 0.44, westX - 0.02, 0.74, left.cz + 0.55, 'x');
-  windowPane(0.22, 0.28, left.cx - 0.52, eaves + 0.74, left.cz - 0.85, 'x');
-  windowPane(0.22, 0.28, left.cx - 0.52, eaves + 0.74, left.cz + 0.85, 'x');
+  windowPane(0.34, 0.44, westX - 0.02, 1.84, left.cz - 0.55, '-x');
+  windowPane(0.34, 0.44, westX - 0.02, 1.84, left.cz + 0.55, '-x');
+  windowPane(0.34, 0.44, westX - 0.02, 0.74, left.cz - 0.55, '-x');
+  windowPane(0.34, 0.44, westX - 0.02, 0.74, left.cz + 0.55, '-x');
+  windowPane(0.22, 0.28, left.cx - 0.52, eaves + 0.74, left.cz - 0.85, '-x');
+  windowPane(0.22, 0.28, left.cx - 0.52, eaves + 0.74, left.cz + 0.85, '-x');
 
   const leftSouth = left.cz + left.d / 2 + 0.03;
   windowPane(0.32, 0.42, left.cx - 0.55, 1.82, leftSouth, 'z');
@@ -428,25 +431,25 @@ function buildTower() {
     [-inset, inset],
     [inset, inset],
   ]) {
-    rbox(0.11, 0.78, 0.11, MAT.chimney, cx + dx, top + 0.95, cz + dz, 0.03, 1);
+    rbox(0.11, 0.55, 0.11, MAT.chimney, cx + dx, top + 0.88, cz + dz, 0.03, 1);
   }
 
   const pts = [
-    new THREE.Vector2(1.02, 0),
-    new THREE.Vector2(0.92, 0.18),
-    new THREE.Vector2(0.58, 0.85),
-    new THREE.Vector2(0.22, 1.45),
-    new THREE.Vector2(0.05, 1.78),
-    new THREE.Vector2(0.0, 1.9),
+    new THREE.Vector2(1.0, 0),
+    new THREE.Vector2(0.86, 0.14),
+    new THREE.Vector2(0.48, 0.62),
+    new THREE.Vector2(0.16, 1.02),
+    new THREE.Vector2(0.035, 1.22),
+    new THREE.Vector2(0.0, 1.32),
   ];
   const hat = new THREE.Mesh(tintGeometry(new THREE.LatheGeometry(pts, 4)), MAT.roof);
-  hat.position.set(cx, top + 0.95, cz);
+  hat.position.set(cx, top + 0.92, cz);
   add(hat);
 
-  cyl(0.028, 0.032, 1.05, 10, MAT.chimney, cx, top + 0.95 + 2.28, cz);
-  sphere(0.05, MAT.bezel, cx, top + 0.95 + 2.82, cz);
-  rbox(0.26, 0.03, 0.03, MAT.chimney, cx, top + 0.95 + 2.94, cz, 0.008, 1);
-  rbox(0.03, 0.14, 0.03, MAT.chimney, cx, top + 0.95 + 3.04, cz, 0.008, 1);
+  cyl(0.026, 0.03, 0.72, 10, MAT.chimney, cx, top + 0.92 + 1.62, cz);
+  sphere(0.045, MAT.bezel, cx, top + 0.92 + 2.02, cz);
+  rbox(0.22, 0.028, 0.028, MAT.chimney, cx, top + 0.92 + 2.12, cz, 0.008, 1);
+  rbox(0.028, 0.12, 0.028, MAT.chimney, cx, top + 0.92 + 2.2, cz, 0.008, 1);
 }
 
 function buildGarden() {
