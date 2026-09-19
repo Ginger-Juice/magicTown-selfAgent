@@ -263,14 +263,6 @@ function buildWings() {
     height: roofH,
     facing: 'x',
   });
-  gableEnd({
-    x: left.cx + left.w / 2 + 0.01,
-    y: eaves,
-    z: left.cz,
-    width: left.d * 0.96,
-    height: roofH,
-    facing: 'x',
-  });
 
   gableRoof({
     cx: right.cx,
@@ -280,22 +272,6 @@ function buildWings() {
     depth: right.w,
     height: roofH + 0.08,
     ridgeAxis: 'x',
-  });
-  gableEnd({
-    x: right.cx,
-    y: eaves,
-    z: right.cz + right.d / 2 + 0.01,
-    width: right.w * 0.96,
-    height: roofH + 0.08,
-    facing: 'z',
-  });
-  gableEnd({
-    x: right.cx,
-    y: eaves,
-    z: right.cz - right.d / 2 - 0.01,
-    width: right.w * 0.96,
-    height: roofH + 0.08,
-    facing: 'z',
   });
   gableEnd({
     x: right.cx + right.w / 2 + 0.01,
