@@ -21,7 +21,8 @@
     "art:preview": "node scripts/art/generate.mjs --preview",
     "art:generate": "node scripts/art/generate.mjs",
     "art:readme": "node scripts/art/generate.mjs --readme",
-    "art:punch": "python scripts/art/punch.py"
+    "art:punch": "python scripts/art/punch.py",
+    "diorama:town-hall": "node scripts/diorama/build-town-hall.mjs"
   },
   "dependencies": {
     "@cursor/sdk": "^1.0.30",
@@ -86,6 +87,7 @@
     "sonner": "^2.0.7",
     "superjson": "^2.2.6",
     "tailwind-merge": "^3.4.0",
+    "three": "^0.170.0",
     "vaul": "^1.1.2",
     "zod": "^4.3.5"
   },
@@ -96,6 +98,7 @@
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.170.0",
     "@vitejs/plugin-react": "^5.1.1",
     "autoprefixer": "^10.4.23",
     "drizzle-kit": "^0.31.8",

@@ -146,6 +146,15 @@ export const zh: DeepL10n<Messages> = {
       readings: '塔里的占卜档案',
       readingsEmpty: '还没有归档。抽牌、听解读，再说说准不准。',
     },
+    diorama: {
+      back: '回到地图',
+      talk: '聊聊',
+      loading: '推门进去……',
+      error: '这扇门暂时打不开。',
+      retry: '再试一次',
+      hint: '拖一拖，四处看看',
+      aria: '{name}的三维小剧场',
+    },
     pier: {
       name: '长堤',
       aria: '长堤',

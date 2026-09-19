@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>镇公所 · Town Hall</title>
+    <style>
+      html, body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #e8eef5;
+        cursor: grab;
+      }
+      body:active { cursor: grabbing; }
+      canvas { display: block; width: 100%; height: 100%; }
+    </style>
+  </head>
+  <body>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module">
+      import * as THREE from "three";
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xe8eef5);
+
+      const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.05, 80);
+      camera.position.set(-7.4, 8.6, 8.8);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.setSize(innerWidth, innerHeight);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.08;
+      renderer.shadowMap.enabled = true;
+      document.body.appendChild(renderer.domElement);
+
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.target.set(0.1, 2.15, 0.15);
+      controls.minDistance = 6.2;
+      controls.maxDistance = 18;
+      controls.maxPolarAngle = Math.PI * 0.46;
+
+      scene.add(new THREE.AmbientLight(0xfff4e6, 0.55));
+      scene.add(new THREE.HemisphereLight(0xc5d6ee, 0xc4b49a, 0.42));
+      const sun = new THREE.DirectionalLight(0xffe0b0, 1.15);
+      sun.position.set(8, 12, 6);
+      sun.castShadow = true;
+      scene.add(sun);
+
+      new GLTFLoader().load("./town_hall.glb", (root) => {
+        scene.add(root.scene);
+      });
+
+      function tick() {
+        controls.update();
+        renderer.render(scene, camera);
+        requestAnimationFrame(tick);
+      }
+      tick();
+      addEventListener("resize", () => {
+        camera.aspect = innerWidth / innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(innerWidth, innerHeight);
+      });
+    </script>
+  </body>
+</html>

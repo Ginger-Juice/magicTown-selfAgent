@@ -142,6 +142,15 @@ export const en = {
       readings: 'Filed readings',
       readingsEmpty: 'No reading filed yet. Draw, listen, then say how it landed.',
     },
+    diorama: {
+      back: 'Back to map',
+      talk: 'Talk',
+      loading: 'Stepping inside…',
+      error: 'This doorway would not open.',
+      retry: 'Try again',
+      hint: 'Drag to look around',
+      aria: '3D scene for {name}',
+    },
     pier: {
       name: 'The Long Pier',
       aria: 'The Long Pier',
