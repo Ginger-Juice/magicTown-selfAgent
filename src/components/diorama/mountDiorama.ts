@@ -31,6 +31,7 @@ export interface DioramaPreset {
   ambient: { color: number; intensity: number };
   hemi: { sky: number; ground: number; intensity: number };
   sun: { color: number; intensity: number; position: [number, number, number] };
+  fill?: { color: number; intensity: number; position: [number, number, number] };
   points: Array<{
     color: number;
     intensity: number;
@@ -42,23 +43,24 @@ export interface DioramaPreset {
 
 export const DIORAMA_PRESETS: Record<DioramaKind, DioramaPreset> = {
   'town-hall-garden': {
-    background: 0xe8eef5,
-    cameraFov: 38,
-    cameraPosition: [-7.4, 8.6, 8.8],
-    target: [0.1, 2.15, 0.15],
+    background: 0xf3efe6,
+    cameraFov: 36,
+    cameraPosition: [-7.2, 8.2, 8.6],
+    target: [0.1, 2.05, 0.2],
     minDistance: 6.2,
     maxDistance: 18,
     minPolarAngle: 0.22,
     maxPolarAngle: Math.PI * 0.46,
-    exposure: 1.08,
-    bloom: { strength: 0.14, radius: 0.38, threshold: 0.82 },
-    ambient: { color: 0xfff4e6, intensity: 0.55 },
-    hemi: { sky: 0xc5d6ee, ground: 0xc4b49a, intensity: 0.42 },
-    sun: { color: 0xffe0b0, intensity: 1.15, position: [8, 12, 6] },
+    exposure: 1.16,
+    bloom: { strength: 0.24, radius: 0.52, threshold: 0.7 },
+    ambient: { color: 0xfff1dc, intensity: 0.64 },
+    hemi: { sky: 0xffe6c4, ground: 0xc4a888, intensity: 0.5 },
+    sun: { color: 0xffe0b0, intensity: 1.42, position: [7.2, 11.5, 5.4] },
+    fill: { color: 0xc8d8f0, intensity: 0.32, position: [-6.5, 6.2, -3.8] },
     points: [
-      { color: 0xffc56a, intensity: 4.5, distance: 6, decay: 1.6, position: [-1.7, 1.5, -0.2] },
-      { color: 0xffd27a, intensity: 5.2, distance: 7, decay: 1.5, position: [1.3, 1.6, 1.5] },
-      { color: 0xffe6b8, intensity: 3.2, distance: 5, decay: 1.8, position: [0.05, 4.6, 0.05] },
+      { color: 0xffc56a, intensity: 6.2, distance: 6.5, decay: 1.5, position: [-1.7, 1.45, -0.15] },
+      { color: 0xffd27a, intensity: 7.0, distance: 7.2, decay: 1.4, position: [1.35, 1.55, 1.55] },
+      { color: 0xffe6b8, intensity: 4.4, distance: 5.4, decay: 1.7, position: [0.05, 4.7, 0.05] },
     ],
   },
 };
@@ -116,6 +118,7 @@ export function mountDiorama(
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = preset.exposure;
   renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const controls = new OrbitControls(camera, canvas);
   controls.enableDamping = true;
@@ -145,8 +148,21 @@ export function mountDiorama(
   const sun = new THREE.DirectionalLight(preset.sun.color, preset.sun.intensity);
   sun.position.set(...preset.sun.position);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.bias = -0.00035;
+  sun.shadow.normalBias = 0.04;
+  sun.shadow.camera.near = 0.5;
+  sun.shadow.camera.far = 32;
+  sun.shadow.camera.left = -10;
+  sun.shadow.camera.right = 10;
+  sun.shadow.camera.top = 10;
+  sun.shadow.camera.bottom = -10;
   scene.add(sun);
+  if (preset.fill) {
+    const fill = new THREE.DirectionalLight(preset.fill.color, preset.fill.intensity);
+    fill.position.set(...preset.fill.position);
+    scene.add(fill);
+  }
   for (const lamp of preset.points) {
     const light = new THREE.PointLight(lamp.color, lamp.intensity, lamp.distance, lamp.decay);
     light.position.set(...lamp.position);

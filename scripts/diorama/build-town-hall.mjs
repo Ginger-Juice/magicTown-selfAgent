@@ -1,11 +1,13 @@
 /**
- * Scripted Magic Town 镇公所 GLB — matches public/b-townhall.png
- * (L-plan half-timber hall, clock tower, ivy, garden plaza).
+ * Scripted Magic Town 镇公所 GLB — clay diorama matching public/b-townhall.png.
  *
- * Preferred local path (Blender 4+/5, higher-quality clay):
+ * Rounded volumes, plaster/slate noise, inset windows, clock faces, ivy worms.
+ * Quality bar is the konbini preview's material richness — still a civic hall.
+ *
+ * Preferred local path (Blender 4+/5):
  *   blender --background --python scripts/blender/town_hall.py
  *
- * This Node builder is the cloud/CI fallback when headless Blender is missing.
+ * Cloud / CI fallback (this file, no Blender):
  *   npm run diorama:town-hall
  */
 import fs from 'node:fs';
@@ -13,6 +15,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 if (typeof globalThis.FileReader === 'undefined') {
   globalThis.FileReader = class FileReader {
@@ -46,194 +49,241 @@ const PUBLIC_DIR = path.join(ROOT, 'public', 'diorama-town-hall');
 const ASSET_DIR = path.join(ROOT, 'assets', 'diorama-town-hall');
 const GLB_NAME = 'town_hall.glb';
 
+function hash(i) {
+  const x = Math.sin(i * 127.1 + 311.7) * 43758.5453;
+  return x - Math.floor(x);
+}
+
 function clay(name, color, extra = {}) {
   return new THREE.MeshStandardMaterial({
     name,
     color,
-    roughness: extra.rough ?? 0.8,
-    metalness: extra.metal ?? 0.02,
+    roughness: extra.rough ?? 0.78,
+    metalness: extra.metal ?? 0.03,
     emissive: extra.emissive ?? color,
-    emissiveIntensity: extra.emit ?? 0.14,
+    emissiveIntensity: extra.emit ?? 0.18,
+    vertexColors: extra.vertexColors ?? true,
     transparent: extra.transparent ?? false,
     opacity: extra.opacity ?? 1,
     side: extra.side ?? THREE.FrontSide,
   });
 }
 
+function tintGeometry(geo, variation = 0.07) {
+  const pos = geo.attributes.position;
+  const colors = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    const n = (hash(i + pos.getX(i) * 17 + pos.getY(i) * 31) - 0.5) * variation;
+    colors[i * 3] = 1 + n;
+    colors[i * 3 + 1] = 1 + n * 0.7;
+    colors[i * 3 + 2] = 1 + n * 0.45;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  return geo;
+}
+
 const MAT = {
-  wall: clay('TownHallWall', 0x9a563c, { emit: 0.16, side: THREE.DoubleSide }),
-  timber: clay('TownHallTimber', 0xe6d3b4, { emit: 0.18, rough: 0.72 }),
-  roof: clay('TownHallRoof', 0x4a5568, { emit: 0.08, rough: 0.86 }),
-  window: clay('InteriorLight', 0xf3c46a, { emit: 2.8, rough: 0.32, emissive: 0xffd27a }),
-  frame: clay('TownHallFrame', 0x5c3a2a, { emit: 0.08, rough: 0.7 }),
-  clock: clay('ClockFace', 0xf6f0e4, { emit: 0.55, rough: 0.45, emissive: 0xfff6e8 }),
-  hand: clay('ClockHand', 0x2a2624, { emit: 0.05, rough: 0.55 }),
-  ivy: clay('TownHallIvy', 0x5c6b48, { emit: 0.12, rough: 0.9 }),
-  bush: clay('TownHallBush', 0x66754f, { emit: 0.1, rough: 0.92 }),
-  ground: clay('TownHallGround', 0xc8bba8, { emit: 0.1, rough: 0.88 }),
-  chimney: clay('TownHallChimney', 0x2f2c2e, { emit: 0.06, rough: 0.78 }),
-  step: clay('TownHallStep', 0x8d4f38, { emit: 0.12 }),
+  wall: clay('TownHallWall', 0xb46a48, { emit: 0.2, rough: 0.82 }),
+  timber: clay('TownHallTimber', 0xf0dfc4, { emit: 0.22, rough: 0.62 }),
+  roof: clay('TownHallRoof', 0x4d5868, { emit: 0.1, rough: 0.88 }),
+  ridge: clay('TownHallRidge', 0x3c4554, { emit: 0.08, rough: 0.7 }),
+  window: clay('InteriorLight', 0xffd27a, { emit: 3.1, rough: 0.28, emissive: 0xffe08a, vertexColors: false }),
+  mullion: clay('TownHallMullion', 0xc9a07a, { emit: 0.16, rough: 0.55 }),
+  frame: clay('TownHallFrame', 0x6a4030, { emit: 0.1, rough: 0.68 }),
+  clock: clay('ClockFace', 0xfff6ea, { emit: 0.7, rough: 0.38, emissive: 0xfff3dc, vertexColors: false }),
+  bezel: clay('ClockBezel', 0xd8c4a4, { emit: 0.2, rough: 0.45, vertexColors: false }),
+  hand: clay('ClockHand', 0x2c2826, { emit: 0.06, rough: 0.5, vertexColors: false }),
+  ivy: clay('TownHallIvy', 0x61704c, { emit: 0.14, rough: 0.92 }),
+  ivyTip: clay('TownHallIvyTip', 0x71825a, { emit: 0.16, rough: 0.9 }),
+  bush: clay('TownHallBush', 0x6a784f, { emit: 0.12, rough: 0.94 }),
+  ground: clay('TownHallGround', 0xd2c4ae, { emit: 0.12, rough: 0.9 }),
+  chimney: clay('TownHallChimney', 0x353238, { emit: 0.08, rough: 0.76 }),
+  step: clay('TownHallStep', 0xa45c40, { emit: 0.16, rough: 0.74 }),
+  door: clay('TownHallDoor', 0x7e4a34, { emit: 0.12, rough: 0.7 }),
 };
 
 const root = new THREE.Group();
 root.name = 'TownHallDiorama';
 
 function add(mesh, parent = root) {
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
   parent.add(mesh);
   return mesh;
 }
 
-function box(w, h, d, mat, x, y, z, rx = 0, ry = 0, rz = 0) {
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+function rbox(w, h, d, mat, x, y, z, radius = 0.08, segs = 2, rx = 0, ry = 0, rz = 0) {
+  const rad = Math.min(radius, w / 2.2, h / 2.2, d / 2.2);
+  const geo = tintGeometry(new RoundedBoxGeometry(w, h, d, segs, rad));
+  const mesh = new THREE.Mesh(geo, mat);
   mesh.position.set(x, y, z);
   mesh.rotation.set(rx, ry, rz);
   return add(mesh);
 }
 
 function cyl(rTop, rBot, h, segs, mat, x, y, z, rx = 0, ry = 0, rz = 0) {
-  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, segs), mat);
+  const mesh = new THREE.Mesh(tintGeometry(new THREE.CylinderGeometry(rTop, rBot, h, segs)), mat);
   mesh.position.set(x, y, z);
   mesh.rotation.set(rx, ry, rz);
   return add(mesh);
 }
 
-function sphere(r, mat, x, y, z, sx = 1, sy = 1, sz = 1) {
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), mat);
+function sphere(r, mat, x, y, z, sx = 1, sy = 1, sz = 1, segs = 16) {
+  const mesh = new THREE.Mesh(tintGeometry(new THREE.SphereGeometry(r, segs, segs - 2), 0.05), mat);
   mesh.position.set(x, y, z);
   mesh.scale.set(sx, sy, sz);
   return add(mesh);
 }
 
-function cone(r, h, segs, mat, x, y, z) {
-  const mesh = new THREE.Mesh(new THREE.ConeGeometry(r, h, segs), mat);
-  mesh.position.set(x, y, z);
-  return add(mesh);
-}
-
-function gableRoof({ cx, cz, eavesY, width, depth, height, ridgeAxis, overhang = 0.16, mat = MAT.roof }) {
+function gableRoof({ cx, cz, eavesY, width, depth, height, ridgeAxis, overhang = 0.18 }) {
   const half = width / 2 + overhang;
   const len = depth + overhang * 2;
   const slope = Math.hypot(half, height);
   const angle = Math.atan2(height, half);
-  const thick = 0.08;
+  const thick = 0.16;
   const midY = eavesY + height / 2;
 
   if (ridgeAxis === 'z') {
-    box(slope, thick, len, mat, cx - half / 2, midY, cz, 0, 0, angle);
-    box(slope, thick, len, mat, cx + half / 2, midY, cz, 0, 0, -angle);
+    rbox(slope, thick, len, MAT.roof, cx - half / 2, midY, cz, 0.05, 1, 0, 0, angle);
+    rbox(slope, thick, len, MAT.roof, cx + half / 2, midY, cz, 0.05, 1, 0, 0, -angle);
+    cyl(0.045, 0.045, len * 0.98, 10, MAT.ridge, cx, eavesY + height + 0.02, cz, Math.PI / 2, 0, 0);
   } else {
-    box(len, thick, slope, mat, cx, midY, cz - half / 2, -angle, 0, 0);
-    box(len, thick, slope, mat, cx, midY, cz + half / 2, angle, 0, 0);
+    rbox(len, thick, slope, MAT.roof, cx, midY, cz - half / 2, 0.05, 1, -angle, 0, 0);
+    rbox(len, thick, slope, MAT.roof, cx, midY, cz + half / 2, 0.05, 1, angle, 0, 0);
+    cyl(0.045, 0.045, len * 0.98, 10, MAT.ridge, cx, eavesY + height + 0.02, cz, 0, 0, Math.PI / 2);
   }
 }
 
-/** Thin triangular gable cap flush with a wall plane (no extrude — those drifted). */
 function gableEnd({ x, y, z, width, height, facing }) {
   const hw = width / 2;
   const shape = new THREE.Shape();
   shape.moveTo(-hw, 0);
   shape.lineTo(hw, 0);
   shape.lineTo(0, height);
-  const geo = new THREE.ShapeGeometry(shape);
+  const geo = tintGeometry(
+    new THREE.ExtrudeGeometry(shape, {
+      depth: 0.12,
+      bevelEnabled: true,
+      bevelThickness: 0.035,
+      bevelSize: 0.03,
+      bevelSegments: 2,
+    }),
+  );
+  geo.translate(0, 0, -0.06);
   const mesh = new THREE.Mesh(geo, MAT.wall);
   if (facing === 'x') mesh.rotation.y = Math.PI / 2;
   mesh.position.set(x, y, z);
   return add(mesh);
 }
 
-function timberStrip(w, h, d, x, y, z, rx = 0, ry = 0, rz = 0) {
-  return box(w, h, d, MAT.timber, x, y, z, rx, ry, rz);
+function timber(w, h, d, x, y, z, rx = 0, ry = 0, rz = 0) {
+  return rbox(w, h, d, MAT.timber, x, y, z, 0.035, 1, rx, ry, rz);
 }
 
 function windowPane(w, h, x, y, z, facing) {
-  const depth = 0.06;
-  const frameT = 0.045;
-  let wx = x;
-  let wz = z;
+  const depth = 0.08;
+  const frameT = 0.055;
   let bw = w;
   let bd = depth;
   if (facing === 'x') {
     bw = depth;
     bd = w;
   }
-  box(bw + frameT * 2, h + frameT * 2, bd + (facing === 'x' ? 0 : frameT * 0.4), MAT.frame, wx, y, wz);
-  box(bw * 0.78, h * 0.78, bd * 1.4, MAT.window, wx, y, wz);
+  rbox(bw + frameT * 2, h + frameT * 2, bd + 0.02, MAT.frame, x, y, z, 0.04, 1);
+  rbox(bw * 0.72, h * 0.72, bd * 1.15, MAT.window, x, y, z, 0.03, 1);
+  if (facing === 'x') {
+    rbox(0.025, h * 0.7, 0.03, MAT.mullion, x, y, z);
+    rbox(0.025, 0.03, w * 0.7, MAT.mullion, x, y, z);
+  } else {
+    rbox(0.03, h * 0.7, 0.025, MAT.mullion, x, y, z);
+    rbox(w * 0.7, 0.03, 0.025, MAT.mullion, x, y, z);
+  }
 }
 
 function clockFace(x, y, z, facing) {
-  const disc = new THREE.Mesh(new THREE.CircleGeometry(0.28, 24), MAT.clock);
-  if (facing === 'z') {
-    disc.position.set(x, y, z);
-  } else {
-    disc.rotation.y = facing === '+x' ? -Math.PI / 2 : Math.PI / 2;
-    disc.position.set(x, y, z);
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+  if (facing === '-x') group.rotation.y = Math.PI / 2;
+  if (facing === '+x') group.rotation.y = -Math.PI / 2;
+  root.add(group);
+
+  const bezel = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.028, 10, 28), MAT.bezel);
+  add(bezel, group);
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(0.285, 32), MAT.clock);
+  disc.position.z = 0.01;
+  add(disc, group);
+
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    const tick = new THREE.Mesh(new THREE.BoxGeometry(i % 3 === 0 ? 0.03 : 0.018, 0.04, 0.012), MAT.hand);
+    tick.position.set(Math.sin(a) * 0.23, Math.cos(a) * 0.23, 0.016);
+    tick.rotation.z = -a;
+    add(tick, group);
   }
-  add(disc);
-  const hour = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.14, 0.02), MAT.hand);
-  const minute = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.2, 0.02), MAT.hand);
-  hour.position.set(0, 0.05, 0.012);
+
+  const hour = new THREE.Mesh(new RoundedBoxGeometry(0.032, 0.13, 0.016, 1, 0.006), MAT.hand);
+  hour.position.set(0.03, 0.04, 0.02);
   hour.rotation.z = 0.55;
-  minute.position.set(0, 0.08, 0.014);
+  add(hour, group);
+  const minute = new THREE.Mesh(new RoundedBoxGeometry(0.024, 0.19, 0.016, 1, 0.005), MAT.hand);
+  minute.position.set(-0.04, 0.07, 0.022);
   minute.rotation.z = -0.35;
-  disc.add(hour);
-  disc.add(minute);
-  const hub = new THREE.Mesh(new THREE.SphereGeometry(0.025, 10, 8), MAT.hand);
-  hub.position.z = 0.016;
-  disc.add(hub);
+  add(minute, group);
+  add(new THREE.Mesh(new THREE.SphereGeometry(0.022, 12, 10), MAT.hand), group).position.z = 0.024;
 }
 
-function vine(points, radius = 0.1) {
-  for (let i = 0; i < points.length; i++) {
-    const [x, y, z] = points[i];
-    const wobble = 0.9 + ((i * 17) % 7) * 0.04;
-    sphere(radius * wobble, MAT.ivy, x, y, z, 1.05, 1.25, 1.05);
-    if (i > 0) {
-      const [x0, y0, z0] = points[i - 1];
-      sphere(radius * 0.95, MAT.ivy, (x + x0) / 2, (y + y0) / 2, (z + z0) / 2, 1.15, 1.3, 1.15);
-    }
-  }
+function vine(points, radius = 0.075) {
+  const curve = new THREE.CatmullRomCurve3(points.map((p) => new THREE.Vector3(...p)));
+  const tube = new THREE.Mesh(tintGeometry(new THREE.TubeGeometry(curve, 22, radius, 8, false), 0.08), MAT.ivy);
+  add(tube);
+  const end = points[points.length - 1];
+  sphere(radius * 1.15, MAT.ivyTip, end[0], end[1], end[2], 1.1, 1.2, 1.1, 12);
+  const start = points[0];
+  sphere(radius * 1.35, MAT.ivy, start[0], start[1] * 0.4, start[2], 1.3, 0.8, 1.2, 12);
 }
 
 function bush(x, y, z, s = 1) {
-  sphere(0.32 * s, MAT.bush, x, y, z, 1.2, 0.9, 1.15);
-  sphere(0.2 * s, MAT.bush, x + 0.16 * s, y + 0.06 * s, z + 0.08 * s);
-  sphere(0.18 * s, MAT.bush, x - 0.14 * s, y + 0.05 * s, z - 0.07 * s);
+  sphere(0.28 * s, MAT.bush, x, y, z, 1.25, 0.88, 1.2, 14);
+  sphere(0.18 * s, MAT.bush, x + 0.16 * s, y + 0.07 * s, z + 0.08 * s, 1, 1, 1, 12);
+  sphere(0.16 * s, MAT.bush, x - 0.14 * s, y + 0.05 * s, z - 0.08 * s, 1, 1, 1, 12);
+  sphere(0.12 * s, MAT.ivyTip, x + 0.04 * s, y + 0.14 * s, z - 0.04 * s, 1, 1, 1, 10);
 }
 
-function chimney(x, y, z, w = 0.28, d = 0.22, h = 0.55) {
-  box(w, h, d, MAT.chimney, x, y + h / 2, z);
-  cyl(0.045, 0.05, 0.16, 8, MAT.chimney, x - w * 0.18, y + h + 0.06, z);
-  cyl(0.045, 0.05, 0.2, 8, MAT.chimney, x + w * 0.18, y + h + 0.08, z);
+function chimney(x, y, z, w = 0.3, d = 0.24, h = 0.58) {
+  rbox(w, h, d, MAT.chimney, x, y + h / 2, z, 0.06, 2);
+  cyl(0.05, 0.055, 0.18, 10, MAT.chimney, x - w * 0.2, y + h + 0.07, z);
+  cyl(0.05, 0.055, 0.22, 10, MAT.chimney, x + w * 0.2, y + h + 0.09, z);
 }
 
-function steps(cx, cz, facing = 'z', count = 3) {
+function steps(cx, cz, facing = 'z', count = 3, width = 1.05) {
   for (let i = 0; i < count; i++) {
-    const t = 0.09;
-    const w = 0.95 - i * 0.04;
-    const d = 0.22;
-    const y = 0.05 + i * t;
-    if (facing === 'z') box(w, t, d, MAT.step, cx, y, cz + i * 0.14);
-    else box(d, t, w, MAT.step, cx - i * 0.14, y, cz);
+    const t = 0.1;
+    const w = width - i * 0.05;
+    const d = 0.24;
+    const y = 0.055 + i * t;
+    if (facing === 'z') rbox(w, t, d, MAT.step, cx, y, cz + i * 0.15, 0.03, 1);
+    else rbox(d, t, w, MAT.step, cx - i * 0.15, y, cz, 0.03, 1);
   }
 }
 
 function buildPlaza() {
-  box(9.4, 0.1, 9.4, MAT.ground, 0, -0.05, 0.15);
-  // cobble nubs around the pad edge, matching the clay cutout
+  rbox(9.6, 0.16, 9.6, MAT.ground, 0, -0.06, 0.18, 0.12, 2);
   const nubs = [
-    [-3.6, -0.3],
-    [-2.2, -2.6],
-    [0.4, -2.8],
-    [2.8, -2.2],
-    [3.9, 0.2],
-    [3.6, 2.4],
-    [1.2, 3.3],
-    [-1.4, 3.1],
-    [-3.5, 2.2],
-    [-4.0, 0.6],
+    [-3.7, -0.2],
+    [-2.3, -2.7],
+    [0.3, -2.9],
+    [2.9, -2.3],
+    [4.0, 0.15],
+    [3.7, 2.5],
+    [1.1, 3.4],
+    [-1.5, 3.2],
+    [-3.6, 2.3],
+    [-4.1, 0.55],
+    [-3.9, -1.4],
+    [3.2, 3.1],
   ];
   for (const [x, z] of nubs) {
-    sphere(0.09, MAT.ivy, x, 0.02, z, 1.2, 0.7, 1.1);
+    sphere(0.11, MAT.ivy, x, 0.04, z, 1.25, 0.65, 1.15, 10);
   }
 }
 
@@ -242,14 +292,14 @@ function buildWings() {
   const right = { cx: 1.42, cz: 0.92, w: 4.36, d: 3.16, h: 2.52 };
   const eaves = left.h;
 
-  box(left.w, left.h, left.d, MAT.wall, left.cx, left.h / 2, left.cz);
-  box(right.w, right.h, right.d, MAT.wall, right.cx, right.h / 2, right.cz);
+  rbox(left.w, left.h, left.d, MAT.wall, left.cx, left.h / 2, left.cz, 0.11, 2);
+  rbox(right.w, right.h, right.d, MAT.wall, right.cx, right.h / 2, right.cz, 0.11, 2);
 
   const roofH = 2.05;
   gableRoof({
     cx: left.cx,
     cz: left.cz,
-    eavesY: eaves,
+    eavesY: eaves - 0.02,
     width: left.w,
     depth: left.d,
     height: roofH,
@@ -259,15 +309,15 @@ function buildWings() {
     x: left.cx - left.w / 2 - 0.01,
     y: eaves,
     z: left.cz,
-    width: left.d * 0.96,
-    height: roofH,
+    width: left.d * 0.94,
+    height: roofH * 0.96,
     facing: 'x',
   });
 
   gableRoof({
     cx: right.cx,
     cz: right.cz,
-    eavesY: eaves,
+    eavesY: eaves - 0.02,
     width: right.d,
     depth: right.w,
     height: roofH + 0.08,
@@ -277,94 +327,85 @@ function buildWings() {
     x: right.cx + right.w / 2 + 0.01,
     y: eaves,
     z: right.cz,
-    width: right.d * 0.96,
-    height: roofH + 0.08,
+    width: right.d * 0.94,
+    height: (roofH + 0.08) * 0.96,
     facing: 'x',
   });
 
-  // West gable timber — keep strips in the wall plane (YZ), never rotate around Z.
-  const westX = left.cx - left.w / 2 - 0.03;
-  timberStrip(0.1, left.h + 0.08, 0.12, westX, left.h / 2, left.cz - left.d * 0.32);
-  timberStrip(0.1, left.h + 0.08, 0.12, westX, left.h / 2, left.cz + left.d * 0.32);
-  timberStrip(0.1, left.h + 0.08, 0.12, westX, left.h / 2, left.cz);
-  timberStrip(0.1, 0.12, left.d * 0.92, westX, 1.28, left.cz);
-  timberStrip(0.1, 0.12, left.d * 0.92, westX, 2.42, left.cz);
-  timberStrip(0.1, 1.55, 0.1, westX, eaves + 0.78, left.cz, 0.7, 0, 0);
-  timberStrip(0.1, 1.55, 0.1, westX, eaves + 0.78, left.cz, -0.7, 0, 0);
-  timberStrip(0.1, 0.55, 0.1, westX, eaves + 1.35, left.cz);
+  const westX = left.cx - left.w / 2 - 0.035;
+  timber(0.11, left.h + 0.06, 0.13, westX, left.h / 2, left.cz - left.d * 0.32);
+  timber(0.11, left.h + 0.06, 0.13, westX, left.h / 2, left.cz + left.d * 0.32);
+  timber(0.11, left.h + 0.06, 0.13, westX, left.h / 2, left.cz);
+  timber(0.11, 0.13, left.d * 0.9, westX, 1.28, left.cz);
+  timber(0.11, 0.13, left.d * 0.9, westX, 2.4, left.cz);
+  timber(0.1, 1.45, 0.1, westX, eaves + 0.74, left.cz, 0.68, 0, 0);
+  timber(0.1, 1.45, 0.1, westX, eaves + 0.74, left.cz, -0.68, 0, 0);
+  timber(0.1, 0.5, 0.1, westX, eaves + 1.28, left.cz);
 
-  // South facade timber on the right wing
-  const southZ = right.cz + right.d / 2 + 0.03;
-  timberStrip(right.w * 0.92, 0.12, 0.1, right.cx, 1.32, southZ);
-  timberStrip(right.w * 0.92, 0.12, 0.1, right.cx, 2.44, southZ);
+  const southZ = right.cz + right.d / 2 + 0.035;
+  timber(right.w * 0.9, 0.13, 0.11, right.cx, 1.3, southZ);
+  timber(right.w * 0.9, 0.13, 0.11, right.cx, 2.42, southZ);
   for (const ox of [-1.55, -0.52, 0.52, 1.55]) {
-    timberStrip(0.11, 1.2, 0.1, right.cx + ox, 1.9, southZ);
+    timber(0.12, 1.18, 0.11, right.cx + ox, 1.88, southZ);
   }
-  timberStrip(0.7, 0.1, 0.1, right.cx - 1.0, 1.9, southZ, 0, 0, 0.7);
-  timberStrip(0.7, 0.1, 0.1, right.cx - 1.0, 1.9, southZ, 0, 0, -0.7);
-  timberStrip(0.7, 0.1, 0.1, right.cx + 1.0, 1.9, southZ, 0, 0, 0.7);
-  timberStrip(0.7, 0.1, 0.1, right.cx + 1.0, 1.9, southZ, 0, 0, -0.7);
+  timber(0.72, 0.1, 0.1, right.cx - 1.02, 1.88, southZ, 0, 0, 0.7);
+  timber(0.72, 0.1, 0.1, right.cx - 1.02, 1.88, southZ, 0, 0, -0.7);
+  timber(0.72, 0.1, 0.1, right.cx + 1.02, 1.88, southZ, 0, 0, 0.7);
+  timber(0.72, 0.1, 0.1, right.cx + 1.02, 1.88, southZ, 0, 0, -0.7);
 
-  // East gable timber
-  const eastX = right.cx + right.w / 2 + 0.03;
-  timberStrip(0.1, right.h + 0.08, 0.12, eastX, right.h / 2, right.cz - 0.7);
-  timberStrip(0.1, right.h + 0.08, 0.12, eastX, right.h / 2, right.cz + 0.7);
-  timberStrip(0.1, 0.12, right.d * 0.88, eastX, 1.3, right.cz);
-  timberStrip(0.1, 0.12, right.d * 0.88, eastX, 2.42, right.cz);
-  timberStrip(0.1, 1.4, 0.1, eastX, eaves + 0.72, right.cz, 0.65, 0, 0);
-  timberStrip(0.1, 1.4, 0.1, eastX, eaves + 0.72, right.cz, -0.65, 0, 0);
+  const eastX = right.cx + right.w / 2 + 0.035;
+  timber(0.11, right.h + 0.06, 0.13, eastX, right.h / 2, right.cz - 0.7);
+  timber(0.11, right.h + 0.06, 0.13, eastX, right.h / 2, right.cz + 0.7);
+  timber(0.11, 0.13, right.d * 0.86, eastX, 1.28, right.cz);
+  timber(0.11, 0.13, right.d * 0.86, eastX, 2.4, right.cz);
+  timber(0.1, 1.32, 0.1, eastX, eaves + 0.7, right.cz, 0.62, 0, 0);
+  timber(0.1, 1.32, 0.1, eastX, eaves + 0.7, right.cz, -0.62, 0, 0);
 
-  // Windows — left west gable
-  windowPane(0.32, 0.42, westX - 0.02, 1.85, left.cz - 0.55, 'x');
-  windowPane(0.32, 0.42, westX - 0.02, 1.85, left.cz + 0.55, 'x');
-  windowPane(0.32, 0.42, westX - 0.02, 0.72, left.cz - 0.55, 'x');
-  windowPane(0.32, 0.42, westX - 0.02, 0.72, left.cz + 0.55, 'x');
-  // roof dormers on left slope
-  windowPane(0.22, 0.26, left.cx - 0.55, eaves + 0.72, left.cz - 0.85, 'x');
-  windowPane(0.22, 0.26, left.cx - 0.55, eaves + 0.72, left.cz + 0.85, 'x');
+  windowPane(0.34, 0.44, westX - 0.02, 1.84, left.cz - 0.55, 'x');
+  windowPane(0.34, 0.44, westX - 0.02, 1.84, left.cz + 0.55, 'x');
+  windowPane(0.34, 0.44, westX - 0.02, 0.74, left.cz - 0.55, 'x');
+  windowPane(0.34, 0.44, westX - 0.02, 0.74, left.cz + 0.55, 'x');
+  windowPane(0.22, 0.28, left.cx - 0.52, eaves + 0.74, left.cz - 0.85, 'x');
+  windowPane(0.22, 0.28, left.cx - 0.52, eaves + 0.74, left.cz + 0.85, 'x');
 
-  // South wall of left wing
-  const leftSouth = left.cz + left.d / 2 + 0.02;
-  windowPane(0.3, 0.4, left.cx - 0.55, 1.82, leftSouth, 'z');
-  windowPane(0.3, 0.4, left.cx + 0.55, 0.7, leftSouth, 'z');
+  const leftSouth = left.cz + left.d / 2 + 0.03;
+  windowPane(0.32, 0.42, left.cx - 0.55, 1.82, leftSouth, 'z');
+  windowPane(0.32, 0.42, left.cx + 0.55, 0.72, leftSouth, 'z');
 
-  // Right wing south windows + door
-  windowPane(0.3, 0.4, right.cx - 1.15, 1.88, southZ + 0.02, 'z');
-  windowPane(0.3, 0.4, right.cx - 0.15, 1.88, southZ + 0.02, 'z');
-  windowPane(0.3, 0.4, right.cx + 0.85, 1.88, southZ + 0.02, 'z');
-  windowPane(0.3, 0.4, right.cx - 1.15, 0.72, southZ + 0.02, 'z');
-  windowPane(0.3, 0.4, right.cx - 0.15, 0.72, southZ + 0.02, 'z');
+  windowPane(0.32, 0.42, right.cx - 1.15, 1.88, southZ + 0.02, 'z');
+  windowPane(0.32, 0.42, right.cx - 0.15, 1.88, southZ + 0.02, 'z');
+  windowPane(0.32, 0.42, right.cx + 0.85, 1.88, southZ + 0.02, 'z');
+  windowPane(0.32, 0.42, right.cx - 1.15, 0.74, southZ + 0.02, 'z');
+  windowPane(0.32, 0.42, right.cx - 0.15, 0.74, southZ + 0.02, 'z');
 
-  // Door + porch
-  box(0.72, 1.28, 0.08, MAT.frame, right.cx + 1.15, 0.7, southZ + 0.02);
-  box(0.58, 1.12, 0.04, clay('TownHallDoor', 0x7a4330, { emit: 0.1 }), right.cx + 1.15, 0.68, southZ + 0.05);
-  cyl(0.07, 0.08, 1.55, 10, MAT.wall, right.cx + 0.78, 0.82, southZ + 0.42);
-  cyl(0.07, 0.08, 1.55, 10, MAT.wall, right.cx + 1.52, 0.82, southZ + 0.42);
-  box(1.05, 0.1, 0.7, MAT.roof, right.cx + 1.15, 1.64, southZ + 0.32);
-  steps(right.cx + 1.15, southZ + 0.55, 'z', 3);
+  rbox(0.78, 1.32, 0.1, MAT.frame, right.cx + 1.15, 0.72, southZ + 0.02, 0.04, 1);
+  rbox(0.6, 1.14, 0.06, MAT.door, right.cx + 1.15, 0.7, southZ + 0.06, 0.04, 1);
+  sphere(0.03, MAT.bezel, right.cx + 1.32, 0.72, southZ + 0.12);
+  cyl(0.075, 0.085, 1.58, 12, MAT.wall, right.cx + 0.78, 0.84, southZ + 0.44);
+  cyl(0.075, 0.085, 1.58, 12, MAT.wall, right.cx + 1.52, 0.84, southZ + 0.44);
+  rbox(1.12, 0.12, 0.78, MAT.roof, right.cx + 1.15, 1.68, southZ + 0.34, 0.04, 1);
+  steps(right.cx + 1.15, southZ + 0.58, 'z', 3, 1.08);
 
-  // East windows
-  windowPane(0.3, 0.4, eastX + 0.02, 1.86, right.cz + 0.15, 'x');
-  windowPane(0.3, 0.4, eastX + 0.02, 0.72, right.cz + 0.15, 'x');
+  windowPane(0.32, 0.42, eastX + 0.02, 1.86, right.cz + 0.15, 'x');
+  windowPane(0.32, 0.42, eastX + 0.02, 0.74, right.cz + 0.15, 'x');
 
-  // Dormer on right south roof
-  box(0.55, 0.42, 0.5, MAT.wall, right.cx + 0.15, eaves + 0.55, southZ - 0.15);
+  rbox(0.58, 0.46, 0.52, MAT.wall, right.cx + 0.15, eaves + 0.55, southZ - 0.12, 0.06, 1);
   gableRoof({
     cx: right.cx + 0.15,
-    cz: southZ - 0.15,
-    eavesY: eaves + 0.72,
-    width: 0.62,
-    depth: 0.55,
-    height: 0.38,
+    cz: southZ - 0.12,
+    eavesY: eaves + 0.74,
+    width: 0.64,
+    depth: 0.56,
+    height: 0.4,
     ridgeAxis: 'x',
-    overhang: 0.04,
+    overhang: 0.05,
   });
-  windowPane(0.2, 0.24, right.cx + 0.15, eaves + 0.58, southZ + 0.08, 'z');
+  windowPane(0.2, 0.24, right.cx + 0.15, eaves + 0.58, southZ + 0.1, 'z');
 
-  chimney(left.cx - 0.15, eaves + roofH - 0.15, left.cz - 1.55, 0.32, 0.24, 0.5);
-  chimney(right.cx + 1.85, eaves + roofH - 0.05, right.cz - 0.05, 0.3, 0.24, 0.48);
+  chimney(left.cx - 0.12, eaves + roofH - 0.12, left.cz - 1.55, 0.34, 0.26, 0.52);
+  chimney(right.cx + 1.85, eaves + roofH - 0.02, right.cz - 0.04, 0.32, 0.26, 0.5);
 
-  steps(left.cx - 0.15, leftSouth + 0.2, 'z', 2);
+  steps(left.cx - 0.15, leftSouth + 0.22, 'z', 2, 0.9);
 
   return { left, right, eaves, roofH };
 }
@@ -372,105 +413,111 @@ function buildWings() {
 function buildTower() {
   const cx = 0.06;
   const cz = -0.18;
-  const base = 2.35;
+  const base = 2.28;
   const top = 5.12;
-  const w = 1.28;
-  box(w, top - base, w, MAT.wall, cx, (base + top) / 2, cz);
+  const w = 1.3;
+  rbox(w, top - base, w, MAT.wall, cx, (base + top) / 2, cz, 0.1, 2);
+  rbox(w + 0.1, 1.02, w + 0.1, MAT.wall, cx, top + 0.46, cz, 0.08, 2);
+  clockFace(cx, top + 0.46, cz + w / 2 + 0.07, 'z');
+  clockFace(cx - w / 2 - 0.07, top + 0.46, cz, '-x');
 
-  // clock loft
-  box(w + 0.08, 0.95, w + 0.08, MAT.wall, cx, top + 0.42, cz);
-  clockFace(cx, top + 0.42, cz + w / 2 + 0.055, 'z');
-  clockFace(cx - w / 2 - 0.055, top + 0.42, cz, '-x');
-
-  const pinnacleH = 0.72;
-  const inset = w / 2 + 0.02;
+  const inset = w / 2 + 0.04;
   for (const [dx, dz] of [
     [-inset, -inset],
     [inset, -inset],
     [-inset, inset],
     [inset, inset],
   ]) {
-    box(0.1, pinnacleH, 0.1, MAT.chimney, cx + dx, top + 0.85 + pinnacleH / 2, cz + dz);
+    rbox(0.11, 0.78, 0.11, MAT.chimney, cx + dx, top + 0.95, cz + dz, 0.03, 1);
   }
 
-  const roofH = 1.85;
-  cone(1.05, roofH, 4, MAT.roof, cx, top + 0.95 + roofH / 2, cz);
-  cyl(0.03, 0.035, 1.15, 8, MAT.chimney, cx, top + 0.95 + roofH + 0.45, cz);
-  sphere(0.055, MAT.chimney, cx, top + 0.95 + roofH + 1.02, cz);
-  box(0.28, 0.035, 0.035, MAT.chimney, cx, top + 0.95 + roofH + 1.12, cz);
-  box(0.035, 0.16, 0.035, MAT.chimney, cx, top + 0.95 + roofH + 1.22, cz);
+  const pts = [
+    new THREE.Vector2(1.02, 0),
+    new THREE.Vector2(0.92, 0.18),
+    new THREE.Vector2(0.58, 0.85),
+    new THREE.Vector2(0.22, 1.45),
+    new THREE.Vector2(0.05, 1.78),
+    new THREE.Vector2(0.0, 1.9),
+  ];
+  const hat = new THREE.Mesh(tintGeometry(new THREE.LatheGeometry(pts, 4)), MAT.roof);
+  hat.position.set(cx, top + 0.95, cz);
+  add(hat);
+
+  cyl(0.028, 0.032, 1.05, 10, MAT.chimney, cx, top + 0.95 + 2.28, cz);
+  sphere(0.05, MAT.bezel, cx, top + 0.95 + 2.82, cz);
+  rbox(0.26, 0.03, 0.03, MAT.chimney, cx, top + 0.95 + 2.94, cz, 0.008, 1);
+  rbox(0.03, 0.14, 0.03, MAT.chimney, cx, top + 0.95 + 3.04, cz, 0.008, 1);
 }
 
-function buildGarden(left, right) {
-  // climbing ivy — clay worms from the homepage sprite
+function buildGarden() {
   vine(
     [
-      [-3.35, 0.2, 1.45],
-      [-3.34, 0.85, 1.28],
-      [-3.33, 1.5, 1.05],
-      [-3.32, 2.1, 0.72],
-      [-3.3, 2.55, 0.28],
+      [-3.34, 0.18, 1.42],
+      [-3.33, 0.9, 1.22],
+      [-3.3, 1.65, 0.95],
+      [-3.28, 2.25, 0.58],
+      [-3.18, 2.62, 0.18],
     ],
-    0.11,
+    0.07,
   );
   vine(
     [
-      [-3.34, 0.25, 1.7],
-      [-3.28, 0.95, 1.88],
-      [-3.2, 1.55, 2.0],
+      [-3.32, 0.2, 1.72],
+      [-3.22, 0.95, 1.92],
+      [-3.12, 1.55, 2.02],
     ],
-    0.09,
+    0.055,
   );
   vine(
     [
-      [-0.85, 0.18, 2.05],
-      [-0.78, 0.85, 2.07],
-      [-0.7, 1.5, 2.06],
+      [-0.88, 0.16, 2.06],
+      [-0.78, 0.88, 2.08],
+      [-0.68, 1.58, 2.06],
     ],
-    0.09,
+    0.055,
   );
   vine(
     [
-      [0.52, 0.2, 2.52],
-      [0.58, 1.0, 2.52],
-      [0.54, 1.75, 2.5],
-      [0.46, 2.4, 2.42],
+      [0.5, 0.18, 2.54],
+      [0.58, 1.05, 2.53],
+      [0.52, 1.85, 2.5],
+      [0.42, 2.48, 2.38],
     ],
-    0.1,
+    0.065,
   );
   vine(
     [
-      [1.88, 0.22, 2.52],
-      [1.96, 1.05, 2.51],
-      [2.04, 1.8, 2.46],
-      [2.1, 2.4, 2.28],
+      [1.9, 0.2, 2.54],
+      [1.98, 1.1, 2.52],
+      [2.08, 1.88, 2.44],
+      [2.14, 2.48, 2.22],
     ],
-    0.09,
+    0.058,
   );
   vine(
     [
-      [3.62, 0.22, 1.5],
-      [3.63, 1.0, 1.38],
-      [3.61, 1.75, 1.15],
-      [3.58, 2.35, 0.88],
+      [3.64, 0.2, 1.52],
+      [3.65, 1.05, 1.36],
+      [3.62, 1.82, 1.1],
+      [3.56, 2.42, 0.82],
     ],
-    0.1,
+    0.065,
   );
 
-  bush(-3.4, 0.16, 1.85, 1.25);
-  bush(-2.1, 0.14, 2.25, 1.05);
-  bush(0.15, 0.14, 2.85, 0.9);
-  bush(3.55, 0.16, 2.2, 1.15);
-  bush(3.85, 0.14, 0.35, 0.95);
-  bush(-3.5, 0.14, -2.05, 1.0);
-  bush(left.cx + 0.2, 0.12, right.cz + 1.75, 0.85);
+  bush(-3.42, 0.18, 1.88, 1.28);
+  bush(-2.12, 0.16, 2.28, 1.08);
+  bush(0.12, 0.16, 2.9, 0.95);
+  bush(3.58, 0.18, 2.22, 1.18);
+  bush(3.88, 0.16, 0.32, 0.98);
+  bush(-3.52, 0.16, -2.08, 1.05);
+  bush(-0.15, 0.14, 2.62, 0.82);
 }
 
 function build() {
   buildPlaza();
-  const { left, right } = buildWings();
+  buildWings();
   buildTower();
-  buildGarden(left, right);
+  buildGarden();
 }
 
 async function exportGlb() {

@@ -20,7 +20,7 @@ export const DIORAMA_SCENES: Record<string, DioramaScene> = {
     landmarkId: 'town-hall',
     kind: 'town-hall-garden',
     glbUrl: '/diorama-town-hall/town_hall.glb',
-    backdrop: '#e8eef5',
+    backdrop: '#f3efe6',
   },
 };
 

@@ -36,7 +36,7 @@ def _nt_clear(mat: bpy.types.Material):
     return nt
 
 
-def mat_clay(name, color, emit=0.14, roughness=0.8):
+def mat_clay(name, color, emit=0.2, roughness=0.78):
     mat = bpy.data.materials.new(name)
     nt = _nt_clear(mat)
     out = nt.nodes.new("ShaderNodeOutputMaterial")
@@ -61,12 +61,20 @@ def link_obj(obj, collection):
     return obj
 
 
-def mesh_box(name, size, loc, collection, mat, rot=(0, 0, 0)):
+def mesh_box(name, size, loc, collection, mat, rot=(0, 0, 0), bevel=0.06):
     bpy.ops.mesh.primitive_cube_add(size=1, location=loc, rotation=rot)
     obj = bpy.context.active_object
     obj.name = name
     obj.scale = size
     bpy.ops.object.transform_apply(scale=True)
+    if bevel > 0:
+        mod = obj.modifiers.new("ClayBevel", "BEVEL")
+        mod.width = bevel
+        mod.segments = 3
+        try:
+            bpy.ops.object.modifier_apply(modifier=mod.name)
+        except Exception:
+            pass
     obj.data.materials.append(mat)
     link_obj(obj, collection)
     return obj

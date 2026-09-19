@@ -10,7 +10,7 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
-        background: #e8eef5;
+        background: #f3efe6;
         cursor: grab;
       }
       body:active { cursor: grabbing; }
@@ -32,35 +32,45 @@
       import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xe8eef5);
+      scene.background = new THREE.Color(0xf3efe6);
 
-      const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.05, 80);
-      camera.position.set(-7.4, 8.6, 8.8);
+      const camera = new THREE.PerspectiveCamera(36, innerWidth / innerHeight, 0.05, 80);
+      camera.position.set(-7.2, 8.2, 8.6);
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
       renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
       renderer.setSize(innerWidth, innerHeight);
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.08;
+      renderer.toneMappingExposure = 1.16;
       renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       document.body.appendChild(renderer.domElement);
 
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
-      controls.target.set(0.1, 2.15, 0.15);
+      controls.target.set(0.1, 2.05, 0.2);
       controls.minDistance = 6.2;
       controls.maxDistance = 18;
       controls.maxPolarAngle = Math.PI * 0.46;
 
-      scene.add(new THREE.AmbientLight(0xfff4e6, 0.55));
-      scene.add(new THREE.HemisphereLight(0xc5d6ee, 0xc4b49a, 0.42));
-      const sun = new THREE.DirectionalLight(0xffe0b0, 1.15);
-      sun.position.set(8, 12, 6);
+      scene.add(new THREE.AmbientLight(0xfff1dc, 0.64));
+      scene.add(new THREE.HemisphereLight(0xffe6c4, 0xc4a888, 0.5));
+      const sun = new THREE.DirectionalLight(0xffe0b0, 1.42);
+      sun.position.set(7.2, 11.5, 5.4);
       sun.castShadow = true;
       scene.add(sun);
+      const fill = new THREE.DirectionalLight(0xc8d8f0, 0.32);
+      fill.position.set(-6.5, 6.2, -3.8);
+      scene.add(fill);
 
       new GLTFLoader().load("./town_hall.glb", (root) => {
+        root.scene.traverse((obj) => {
+          if (obj.isMesh) {
+            obj.castShadow = true;
+            obj.receiveShadow = true;
+          }
+        });
         scene.add(root.scene);
       });
 
