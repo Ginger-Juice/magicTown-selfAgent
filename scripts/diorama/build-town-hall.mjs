@@ -61,10 +61,10 @@ function clay(name, color, extra = {}) {
 }
 
 const MAT = {
-  wall: clay('TownHallWall', 0x9a563c, { emit: 0.16 }),
+  wall: clay('TownHallWall', 0x9a563c, { emit: 0.16, side: THREE.DoubleSide }),
   timber: clay('TownHallTimber', 0xe6d3b4, { emit: 0.18, rough: 0.72 }),
   roof: clay('TownHallRoof', 0x4a5568, { emit: 0.08, rough: 0.86 }),
-  window: clay('InteriorLight', 0xf3c46a, { emit: 2.4, rough: 0.35, emissive: 0xffd27a }),
+  window: clay('InteriorLight', 0xf3c46a, { emit: 2.8, rough: 0.32, emissive: 0xffd27a }),
   frame: clay('TownHallFrame', 0x5c3a2a, { emit: 0.08, rough: 0.7 }),
   clock: clay('ClockFace', 0xf6f0e4, { emit: 0.55, rough: 0.45, emissive: 0xfff6e8 }),
   hand: clay('ClockHand', 0x2a2624, { emit: 0.05, rough: 0.55 }),
@@ -127,27 +127,17 @@ function gableRoof({ cx, cz, eavesY, width, depth, height, ridgeAxis, overhang =
   }
 }
 
-function gableWall({ cx, cz, eavesY, width, height, face, mat = MAT.wall }) {
+/** Thin triangular gable cap flush with a wall plane (no extrude — those drifted). */
+function gableEnd({ x, y, z, width, height, facing }) {
   const hw = width / 2;
   const shape = new THREE.Shape();
   shape.moveTo(-hw, 0);
   shape.lineTo(hw, 0);
   shape.lineTo(0, height);
-  shape.lineTo(-hw, 0);
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.08, bevelEnabled: false });
-  const mesh = new THREE.Mesh(geo, mat);
-  if (face === '-x') {
-    mesh.rotation.y = Math.PI / 2;
-    mesh.position.set(cx, eavesY, cz);
-  } else if (face === '+x') {
-    mesh.rotation.y = -Math.PI / 2;
-    mesh.position.set(cx, eavesY, cz);
-  } else if (face === '-z') {
-    mesh.position.set(cx, eavesY, cz);
-  } else {
-    mesh.rotation.y = Math.PI;
-    mesh.position.set(cx, eavesY, cz);
-  }
+  const geo = new THREE.ShapeGeometry(shape);
+  const mesh = new THREE.Mesh(geo, MAT.wall);
+  if (facing === 'x') mesh.rotation.y = Math.PI / 2;
+  mesh.position.set(x, y, z);
   return add(mesh);
 }
 
@@ -192,23 +182,22 @@ function clockFace(x, y, z, facing) {
   disc.add(hub);
 }
 
-function vine(points, radius = 0.055) {
+function vine(points, radius = 0.1) {
   for (let i = 0; i < points.length; i++) {
     const [x, y, z] = points[i];
-    const wobble = 0.85 + ((i * 17) % 7) * 0.03;
-    sphere(radius * wobble, MAT.ivy, x, y, z, 1, 1.15, 1);
+    const wobble = 0.9 + ((i * 17) % 7) * 0.04;
+    sphere(radius * wobble, MAT.ivy, x, y, z, 1.05, 1.25, 1.05);
     if (i > 0) {
       const [x0, y0, z0] = points[i - 1];
-      const mid = [(x + x0) / 2, (y + y0) / 2, (z + z0) / 2];
-      sphere(radius * 0.92, MAT.ivy, mid[0], mid[1], mid[2], 1.1, 1.2, 1.1);
+      sphere(radius * 0.95, MAT.ivy, (x + x0) / 2, (y + y0) / 2, (z + z0) / 2, 1.15, 1.3, 1.15);
     }
   }
 }
 
 function bush(x, y, z, s = 1) {
-  sphere(0.22 * s, MAT.bush, x, y, z, 1.15, 0.85, 1.1);
-  sphere(0.14 * s, MAT.bush, x + 0.12 * s, y + 0.04 * s, z + 0.06 * s);
-  sphere(0.12 * s, MAT.bush, x - 0.1 * s, y + 0.03 * s, z - 0.05 * s);
+  sphere(0.32 * s, MAT.bush, x, y, z, 1.2, 0.9, 1.15);
+  sphere(0.2 * s, MAT.bush, x + 0.16 * s, y + 0.06 * s, z + 0.08 * s);
+  sphere(0.18 * s, MAT.bush, x - 0.14 * s, y + 0.05 * s, z - 0.07 * s);
 }
 
 function chimney(x, y, z, w = 0.28, d = 0.22, h = 0.55) {
@@ -266,8 +255,22 @@ function buildWings() {
     height: roofH,
     ridgeAxis: 'z',
   });
-  gableWall({ cx: left.cx - left.w / 2, cz: left.cz, eavesY: eaves, width: left.d * 0.98, height: roofH, face: '-x' });
-  gableWall({ cx: left.cx + left.w / 2, cz: left.cz, eavesY: eaves, width: left.d * 0.98, height: roofH, face: '+x' });
+  gableEnd({
+    x: left.cx - left.w / 2 - 0.01,
+    y: eaves,
+    z: left.cz,
+    width: left.d * 0.96,
+    height: roofH,
+    facing: 'x',
+  });
+  gableEnd({
+    x: left.cx + left.w / 2 + 0.01,
+    y: eaves,
+    z: left.cz,
+    width: left.d * 0.96,
+    height: roofH,
+    facing: 'x',
+  });
 
   gableRoof({
     cx: right.cx,
@@ -278,41 +281,41 @@ function buildWings() {
     height: roofH + 0.08,
     ridgeAxis: 'x',
   });
-  gableWall({
-    cx: right.cx,
-    cz: right.cz + right.d / 2,
-    eavesY: eaves,
-    width: right.w * 0.98,
+  gableEnd({
+    x: right.cx,
+    y: eaves,
+    z: right.cz + right.d / 2 + 0.01,
+    width: right.w * 0.96,
     height: roofH + 0.08,
-    face: '+z',
+    facing: 'z',
   });
-  gableWall({
-    cx: right.cx,
-    cz: right.cz - right.d / 2,
-    eavesY: eaves,
-    width: right.w * 0.98,
+  gableEnd({
+    x: right.cx,
+    y: eaves,
+    z: right.cz - right.d / 2 - 0.01,
+    width: right.w * 0.96,
     height: roofH + 0.08,
-    face: '-z',
+    facing: 'z',
   });
-  gableWall({
-    cx: right.cx + right.w / 2,
-    cz: right.cz,
-    eavesY: eaves,
-    width: right.d * 0.98,
+  gableEnd({
+    x: right.cx + right.w / 2 + 0.01,
+    y: eaves,
+    z: right.cz,
+    width: right.d * 0.96,
     height: roofH + 0.08,
-    face: '+x',
+    facing: 'x',
   });
 
-  // West gable timber (the readable face from the map sprite)
+  // West gable timber — keep strips in the wall plane (YZ), never rotate around Z.
   const westX = left.cx - left.w / 2 - 0.03;
   timberStrip(0.1, left.h + 0.08, 0.12, westX, left.h / 2, left.cz - left.d * 0.32);
   timberStrip(0.1, left.h + 0.08, 0.12, westX, left.h / 2, left.cz + left.d * 0.32);
   timberStrip(0.1, left.h + 0.08, 0.12, westX, left.h / 2, left.cz);
   timberStrip(0.1, 0.12, left.d * 0.92, westX, 1.28, left.cz);
   timberStrip(0.1, 0.12, left.d * 0.92, westX, 2.42, left.cz);
-  timberStrip(0.1, 1.7, 0.1, westX, eaves + 0.85, left.cz - 0.55, 0, 0, 0.55);
-  timberStrip(0.1, 1.7, 0.1, westX, eaves + 0.85, left.cz + 0.55, 0, 0, -0.55);
-  timberStrip(0.1, 0.7, 0.1, westX, eaves + 1.55, left.cz);
+  timberStrip(0.1, 1.55, 0.1, westX, eaves + 0.78, left.cz, 0.7, 0, 0);
+  timberStrip(0.1, 1.55, 0.1, westX, eaves + 0.78, left.cz, -0.7, 0, 0);
+  timberStrip(0.1, 0.55, 0.1, westX, eaves + 1.35, left.cz);
 
   // South facade timber on the right wing
   const southZ = right.cz + right.d / 2 + 0.03;
@@ -332,8 +335,8 @@ function buildWings() {
   timberStrip(0.1, right.h + 0.08, 0.12, eastX, right.h / 2, right.cz + 0.7);
   timberStrip(0.1, 0.12, right.d * 0.88, eastX, 1.3, right.cz);
   timberStrip(0.1, 0.12, right.d * 0.88, eastX, 2.42, right.cz);
-  timberStrip(0.1, 1.55, 0.1, eastX, eaves + 0.8, right.cz - 0.4, 0, 0, 0.55);
-  timberStrip(0.1, 1.55, 0.1, eastX, eaves + 0.8, right.cz + 0.4, 0, 0, -0.55);
+  timberStrip(0.1, 1.4, 0.1, eastX, eaves + 0.72, right.cz, 0.65, 0, 0);
+  timberStrip(0.1, 1.4, 0.1, eastX, eaves + 0.72, right.cz, -0.65, 0, 0);
 
   // Windows — left west gable
   windowPane(0.32, 0.42, westX - 0.02, 1.85, left.cz - 0.55, 'x');
@@ -426,67 +429,65 @@ function buildGarden(left, right) {
   // climbing ivy — clay worms from the homepage sprite
   vine(
     [
-      [-3.42, 0.15, 1.55],
-      [-3.38, 0.7, 1.45],
-      [-3.36, 1.25, 1.25],
-      [-3.34, 1.85, 1.05],
-      [-3.32, 2.35, 0.75],
-      [-3.22, 2.55, 0.35],
+      [-3.35, 0.2, 1.45],
+      [-3.34, 0.85, 1.28],
+      [-3.33, 1.5, 1.05],
+      [-3.32, 2.1, 0.72],
+      [-3.3, 2.55, 0.28],
     ],
-    0.06,
+    0.11,
   );
   vine(
     [
-      [-3.4, 0.2, 1.7],
-      [-3.28, 0.85, 1.85],
-      [-3.18, 1.4, 1.95],
+      [-3.34, 0.25, 1.7],
+      [-3.28, 0.95, 1.88],
+      [-3.2, 1.55, 2.0],
     ],
-    0.05,
+    0.09,
   );
   vine(
     [
-      [-0.85, 0.12, 2.08],
-      [-0.78, 0.75, 2.1],
-      [-0.7, 1.35, 2.08],
+      [-0.85, 0.18, 2.05],
+      [-0.78, 0.85, 2.07],
+      [-0.7, 1.5, 2.06],
     ],
-    0.05,
+    0.09,
   );
   vine(
     [
-      [0.55, 0.15, 2.55],
-      [0.62, 0.9, 2.54],
-      [0.58, 1.6, 2.52],
-      [0.5, 2.2, 2.48],
-      [0.42, 2.7, 2.3],
+      [0.52, 0.2, 2.52],
+      [0.58, 1.0, 2.52],
+      [0.54, 1.75, 2.5],
+      [0.46, 2.4, 2.42],
     ],
-    0.052,
+    0.1,
   );
   vine(
     [
-      [1.85, 0.2, 2.55],
-      [1.95, 0.95, 2.54],
-      [2.05, 1.7, 2.5],
-      [2.12, 2.35, 2.35],
+      [1.88, 0.22, 2.52],
+      [1.96, 1.05, 2.51],
+      [2.04, 1.8, 2.46],
+      [2.1, 2.4, 2.28],
     ],
-    0.05,
+    0.09,
   );
   vine(
     [
-      [3.62, 0.2, 1.55],
-      [3.64, 0.9, 1.45],
-      [3.62, 1.65, 1.25],
-      [3.58, 2.25, 1.0],
+      [3.62, 0.22, 1.5],
+      [3.63, 1.0, 1.38],
+      [3.61, 1.75, 1.15],
+      [3.58, 2.35, 0.88],
     ],
-    0.05,
+    0.1,
   );
 
-  bush(-3.45, 0.12, 1.85, 1.05);
-  bush(-2.15, 0.1, 2.25, 0.85);
-  bush(0.15, 0.1, 2.75, 0.7);
-  bush(3.55, 0.12, 2.15, 0.95);
-  bush(3.85, 0.1, 0.35, 0.75);
-  bush(-3.55, 0.1, -2.05, 0.8);
-  bush(left.cx + 0.2, 0.08, right.cz + 1.7, 0.65);
+  bush(-3.4, 0.16, 1.85, 1.25);
+  bush(-2.1, 0.14, 2.25, 1.05);
+  bush(0.15, 0.14, 2.85, 0.9);
+  bush(3.55, 0.16, 2.2, 1.15);
+  bush(3.85, 0.14, 0.35, 0.95);
+  bush(-3.5, 0.14, -2.05, 1.0);
+  bush(left.cx + 0.2, 0.12, right.cz + 1.75, 0.85);
 }
 
 function build() {
