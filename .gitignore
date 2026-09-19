@@ -27,3 +27,4 @@ coverage/
 *.log
 # generated art previews (pipeline output)
 assets/art-preview/*
+__pycache__/

@@ -84,6 +84,7 @@ function sizeOf(el: HTMLElement) {
   };
 }
 
+/** Load a pre-authored GLB and present it. Does not build landmark meshes. */
 export function mountDiorama(
   canvas: HTMLCanvasElement,
   glbUrl: string,

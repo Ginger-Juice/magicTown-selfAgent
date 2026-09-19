@@ -3,6 +3,9 @@
  * step into a diorama. Plan A ships `town-hall` (镇公所) as the first
  * homepage-aligned scene. The older konbini GLB is a tech sample only
  * and is intentionally not registered here.
+ *
+ * The town-hall mesh is Blender-authored (`scripts/blender/town_hall.py`).
+ * Runtime only loads that exported GLB. Do not generate this building in Three.js.
  */
 export type DioramaKind = 'town-hall-garden';
 

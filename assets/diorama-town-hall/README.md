@@ -2,20 +2,23 @@
 
 Homepage-aligned 3D scene for the `town-hall` landmark. Not the konbini tech sample.
 
-The shipped mesh is a clay-cutout hall (rounded volumes, plaster/slate noise, inset windows, ivy worms). Lighting in the app overlay is a warm studio preset — konbini-level richness, civic subject.
+**Authoring path: Blender only.** The mesh is modelled by `scripts/blender/town_hall.py`. Three.js procedural geometry is not a source of truth and is not shipped. There is no `npm run diorama:town-hall` fallback.
 
-## Regenerate
+Runtime (`src/lib/diorama.ts`) loads only `/diorama-town-hall/town_hall.glb`. The overlay uses Three.js for camera, lights, and orbit — not for building the hall.
 
-Preferred (local Blender 4+/5 — bevelled clay + preview PNG):
+## Bake (Blender 5.1)
+
+From the repo root, with Blender 5.1 on `PATH`:
 
 ```bash
 blender --background --python scripts/blender/town_hall.py
 ```
 
-Cloud / CI fallback (scripted Three.js, no Blender) — this is what ships from the cloud agent:
+Writes:
 
-```bash
-npm run diorama:town-hall
-```
+- `assets/diorama-town-hall/town_hall.blend`
+- `assets/diorama-town-hall/town_hall.glb`
+- `assets/diorama-town-hall/preview.png`
+- `public/diorama-town-hall/town_hall.glb` (what the app loads)
 
-Both write `town_hall.glb` here and copy it to `public/diorama-town-hall/`.
+The GLB currently in git is a Blender 5.1 export. Re-run the command after pulling this script so the hall picks up the cutout silhouette (west/east gables, attic prisms, slate shingles, half-timber, porch, ivy). Do **not** regenerate it with Node or Three.js.

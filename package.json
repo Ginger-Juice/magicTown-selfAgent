@@ -21,8 +21,7 @@
     "art:preview": "node scripts/art/generate.mjs --preview",
     "art:generate": "node scripts/art/generate.mjs",
     "art:readme": "node scripts/art/generate.mjs --readme",
-    "art:punch": "python scripts/art/punch.py",
-    "diorama:town-hall": "node scripts/diorama/build-town-hall.mjs"
+    "art:punch": "python scripts/art/punch.py"
   },
   "dependencies": {
     "@cursor/sdk": "^1.0.30",
