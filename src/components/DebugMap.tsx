@@ -5,8 +5,10 @@ import { Check, Compass as CompassIcon, Copy, Minus, Pencil, Plus, RotateCcw } f
 import { useLanguage } from '@/lib/i18n';
 import { useTown } from '@/lib/town';
 import { byId } from '@/lib/landmarks';
+import { dioramaFor } from '@/lib/diorama';
 import { useRecordLandmark } from '@/hooks/useRecordLandmark';
 import LandmarkChat from './LandmarkChat';
+import LandmarkDiorama from './LandmarkDiorama';
 import { cn } from '@/lib/utils';
 
 const FALLBACK = { w: 1600, h: 1200 };
@@ -249,6 +251,7 @@ export default function DebugMap() {
   const [ready, setReady] = useState(false);
   const [world, setWorld] = useState(FALLBACK);
   const [selectedId, setSelectedId] = useState<BuildingId | null>(null);
+  const [talkOpen, setTalkOpen] = useState(false);
   const [hoveredId, setHoveredId] = useState<BuildingId | null>(null);
   const [editing, setEditing] = useState(false);
   const [overlay, setOverlay] = useState(false);
@@ -444,6 +447,7 @@ export default function DebugMap() {
       if (!b) return;
       if (!selectedId) priorView.current = { ...cam.current };
       setSelectedId(id);
+      setTalkOpen(!dioramaFor(id));
       setHoveredId(null);
       setMapDetailOpen(true);
       recordLandmark(id);
@@ -454,6 +458,7 @@ export default function DebugMap() {
 
   const closeBuilding = useCallback(() => {
     setSelectedId(null);
+    setTalkOpen(false);
     setMapDetailOpen(false);
     const back = priorView.current;
     priorView.current = null;
@@ -472,7 +477,8 @@ export default function DebugMap() {
     if (!selectedId && !editing) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (selectedId) closeBuilding();
+        if (talkOpen && dioramaFor(selectedId)) setTalkOpen(false);
+        else if (selectedId) closeBuilding();
         else if (editing) setEditId(null);
         return;
       }
@@ -496,7 +502,7 @@ export default function DebugMap() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [closeBuilding, editId, editing, selectedId]);
+  }, [closeBuilding, editId, editing, selectedId, talkOpen]);
 
   const stepZoom = (dir: 1 | -1) => {
     if (selectedId) return;
@@ -796,11 +802,21 @@ export default function DebugMap() {
       )}
 
       <AnimatePresence>
-        {selectedId && !editing && (
+        {selectedId && !editing && dioramaFor(selectedId) && (
+          <LandmarkDiorama
+            key={`diorama-${selectedId}`}
+            landmarkId={selectedId}
+            onBack={closeBuilding}
+            onTalk={() => setTalkOpen(true)}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {selectedId && !editing && talkOpen && (
           <LandmarkChat
             key={selectedId}
             landmarkId={selectedId}
-            onClose={closeBuilding}
+            onClose={() => (dioramaFor(selectedId) ? setTalkOpen(false) : closeBuilding())}
             onNext={nextBuilding}
           />
         )}
