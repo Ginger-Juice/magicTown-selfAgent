@@ -21,4 +21,4 @@ Writes:
 - `assets/diorama-town-hall/preview.png`
 - `public/diorama-town-hall/town_hall.glb` (what the app loads)
 
-The GLB currently in git is a Blender 5.1 export. Re-run the command after pulling this script so the hall picks up the cutout silhouette (west/east gables, attic prisms, slate shingles, half-timber, porch, ivy). Do **not** regenerate it with Node or Three.js.
+The GLB currently in git is a Blender 5.1 export. Re-run the command after pulling so slates lie flush on the roof pitch (downslope overlap, not shelf/fin tiles). Do **not** regenerate it with Node or Three.js.

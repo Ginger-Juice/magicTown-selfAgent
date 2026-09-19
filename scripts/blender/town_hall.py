@@ -285,6 +285,16 @@ def join_named(name, objects):
 # Hall parts
 # ---------------------------------------------------------------------------
 
+def _local_z_world(rot):
+    """World +Z of an XYZ-Euler object. Blender R = Rz @ Ry @ Rx."""
+    rx, ry, rz = rot
+    cx, sx = math.cos(rx), math.sin(rx)
+    cy, sy = math.cos(ry), math.sin(ry)
+    cz, sz = math.cos(rz), math.sin(rz)
+    x, y, z = sy * cx, -sx, cy * cx
+    return (x * cz - y * sz, x * sz + y * cz, z)
+
+
 def gable_roof(name, cx, cy, eaves_z, width, depth, height, ridge_along, collection, mats, overhang=0.2):
     """Slate planes + ridge. width = span across the ridge; depth = length along it."""
     half = width / 2 + overhang
@@ -298,8 +308,8 @@ def gable_roof(name, cx, cy, eaves_z, width, depth, height, ridge_along, collect
         b = box(name + "R", (cx + half / 2, cy, mid_z), (slope, length, thick), collection, mats["roof"], rot=(0, angle, 0))
         ridge = cyl(name + "Ridge", (cx, cy, eaves_z + height + 0.02), 0.045, length * 0.98, collection, mats["ridge"], rot=(math.pi / 2, 0, 0), segs=10)
     else:
-        a = box(name + "N", (cx, cy + half / 2, mid_z), (length, slope, thick), collection, mats["roof"], rot=(angle, 0, 0))
-        b = box(name + "S", (cx, cy - half / 2, mid_z), (length, slope, thick), collection, mats["roof"], rot=(-angle, 0, 0))
+        a = box(name + "N", (cx, cy + half / 2, mid_z), (length, slope, thick), collection, mats["roof"], rot=(-angle, 0, 0))
+        b = box(name + "S", (cx, cy - half / 2, mid_z), (length, slope, thick), collection, mats["roof"], rot=(angle, 0, 0))
         ridge = cyl(name + "Ridge", (cx, cy, eaves_z + height + 0.02), 0.045, length * 0.98, collection, mats["ridge"], rot=(0, 0, math.pi / 2), segs=10)
     for obj in (a, b):
         clay_bevel(obj, 0.035, 2)
@@ -308,51 +318,90 @@ def gable_roof(name, cx, cy, eaves_z, width, depth, height, ridge_along, collect
 
 
 def shingles(name, cx, cy, eaves_z, width, depth, height, ridge_along, collection, mat, overhang=0.2):
+    """Clay slates coplanar with the gable slabs.
+
+    Local XY is the tile face, local Z is the roof normal (same Euler as the
+    roof box). Courses overlap along the slope; the exposed edge is the
+    downslope / eave edge of each course. Lift is along the normal, not world Z.
+    """
     half = width / 2 + overhang
     length = depth + overhang * 2
+    slope_len = math.hypot(half, height)
     angle = math.atan2(height, half)
-    rows, cols = 8, 11
+    thick = 0.024
+    slab_outer = 0.078
+    rows = max(3, min(10, round(slope_len / 0.26)))
+    cols = max(3, min(16, round(length / 0.24)))
+    exposed = slope_len / rows
+    along = exposed * 1.38
+    across = length / cols * 1.06
     tiles = []
-    if ridge_along == "x":
-        x0 = cx - length / 2
-        for side in (-1, 1):
-            for r in range(rows):
-                t = (r + 0.58) / rows
-                z = eaves_z + t * height + 0.06
-                y = cy + side * half * (1.0 - t)
-                stagger = (length / cols) * 0.28 if r % 2 else 0.0
-                for c in range(cols):
-                    x = x0 + stagger + (c + 0.5) * (length / cols)
-                    tiles.append(
-                        box(
-                            f"{name}_{side}_{r}_{c}",
-                            (x, y, z),
-                            (length / cols * 0.92, 0.15, 0.035),
-                            collection,
-                            mat,
-                            rot=(side * angle, 0, 0),
-                        )
-                    )
-    else:
-        y0 = cy - length / 2
-        for side in (-1, 1):
-            for r in range(rows):
-                t = (r + 0.58) / rows
-                z = eaves_z + t * height + 0.06
-                x = cx + side * half * (1.0 - t)
-                stagger = (length / cols) * 0.28 if r % 2 else 0.0
-                for c in range(cols):
-                    y = y0 + stagger + (c + 0.5) * (length / cols)
-                    tiles.append(
-                        box(
-                            f"{name}_{side}_{r}_{c}",
-                            (x, y, z),
-                            (0.15, length / cols * 0.92, 0.035),
-                            collection,
-                            mat,
-                            rot=(0, -side * angle, 0),
-                        )
-                    )
+
+    for side in (-1, 1):
+        if ridge_along == "x":
+            # Local Z = slope normal (south +angle, north −angle). Face lies on the pitch.
+            rot = (-side * angle, 0, 0)
+            size = (across, along, thick)
+        else:
+            # Same Euler as the W/E roof boxes (west −angle, east +angle).
+            rot = (0, side * angle, 0)
+            size = (along, across, thick)
+        nx, ny, nz = _local_z_world(rot)
+        for r in range(rows):
+            s_center = min(r * exposed + along * 0.5, slope_len - along * 0.28)
+            t = s_center / slope_len
+            lift = slab_outer + thick * 0.5 + r * 0.0022
+            stagger = (length / cols) * 0.5 if r % 2 else 0.0
+            for c in range(cols):
+                along_ridge = -length / 2 + stagger + (c + 0.5) * (length / cols)
+                if ridge_along == "x":
+                    px = cx + along_ridge
+                    py = cy + side * half * (1.0 - t)
+                else:
+                    px = cx + side * half * (1.0 - t)
+                    py = cy + along_ridge
+                pz = eaves_z + t * height
+                loc = (px + nx * lift, py + ny * lift, pz + nz * lift)
+                tiles.append(box(f"{name}_{side}_{r}_{c}", loc, size, collection, mat, rot=rot))
+    join_named(name, tiles)
+
+
+def pyramid_shingles(name, cx, cy, base_z, height, radius, collection, mat):
+    """Slates on a square pyramid (clock-tower hat). Faces point S/N/W/E."""
+    apothem = radius * math.cos(math.pi / 4)
+    pitch = math.atan2(height, apothem)
+    slope_len = math.hypot(apothem, height)
+    half_edge = radius * math.sin(math.pi / 4)
+    thick = 0.022
+    rows = max(4, min(7, round(slope_len / 0.22)))
+    exposed = slope_len / rows
+    along = exposed * 1.36
+    tiles = []
+    # (rot, across_axis 'x'|'y') matching gable N/S/W/E eulers.
+    faces = (
+        ((pitch, 0, 0), "x", 0, -1),  # south, −Y; local Z = (0, −sin, cos)
+        ((-pitch, 0, 0), "x", 0, 1),  # north, +Y
+        ((0, -pitch, 0), "y", -1, 0),  # west, −X
+        ((0, pitch, 0), "y", 1, 0),  # east, +X
+    )
+    for f, (rot, across_axis, sx, sy) in enumerate(faces):
+        nx, ny, nz = _local_z_world(rot)
+        for r in range(rows):
+            s_center = min(r * exposed + along * 0.5, slope_len - along * 0.25)
+            t = s_center / slope_len
+            span = max(0.08, 2 * half_edge * (1.0 - t) + 0.04)
+            n_cols = max(2, round(span / 0.16))
+            across = span / n_cols * 1.08
+            size = (across, along, thick) if across_axis == "x" else (along, across, thick)
+            lift = 0.04 + thick * 0.5 + r * 0.002
+            stagger = (span / n_cols) * 0.45 if r % 2 else 0.0
+            for k in range(n_cols):
+                off = -span / 2 + stagger + (k + 0.5) * (span / n_cols)
+                px = cx + sx * apothem * (1.0 - t) + (off if across_axis == "x" else 0.0)
+                py = cy + sy * apothem * (1.0 - t) + (off if across_axis == "y" else 0.0)
+                pz = base_z + t * height
+                loc = (px + nx * lift, py + ny * lift, pz + nz * lift)
+                tiles.append(box(f"{name}_{f}_{r}_{k}", loc, size, collection, mat, rot=rot))
     join_named(name, tiles)
 
 
@@ -574,6 +623,7 @@ def build_wings(mats, c_hall):
     porch = box("PorchRoof", (right["cx"] + 1.22, south - 0.36, 1.78), (1.18, 0.82, 0.1), c_hall, mats["roof"])
     clay_bevel(porch, 0.04, 2)
     attic_prism("PorchAttic", right["cx"] + 1.22, south - 0.36, 1.78, 1.18, 0.7, 0.38, "y", c_hall, mats["roof"])
+    shingles("PorchTiles", right["cx"] + 1.22, south - 0.36, 1.78, 1.18, 0.7, 0.38, "y", c_hall, mats["roof"], overhang=0.04)
     steps("PorchStep", right["cx"] + 1.22, south - 0.62, c_hall, mats, 3, 1.12, "-y")
 
     window("WinE0", (east + 0.02, right["cy"] - 0.38, 1.86), 0.30, 0.40, "x", c_hall, mats, arched=True)
@@ -609,28 +659,9 @@ def build_tower(mats, c):
 
     hat_z = top + 0.5 + 0.54 + 0.7
     hat = cone("TowerRoof", (cx, cy, hat_z), 1.08, 1.4, c, mats["roof"], segs=4)
+    hat.rotation_euler = (0, 0, math.pi / 4)
     clay_bevel(hat, 0.03, 2)
-    # Four-sided pyramid shingles.
-    tiles = []
-    hat_h = 1.4
-    for side, rot in enumerate(((0.72, 0, 0), (-0.72, 0, 0), (0, 0.72, 0), (0, -0.72, 0))):
-        for r in range(6):
-            t = (r + 0.5) / 6
-            z = (top + 1.04) + t * hat_h * 0.85
-            span = 1.7 * (1.0 - t)
-            n = max(3, 7 - r)
-            for k in range(n):
-                off = (k + 0.5 - n / 2) * (span / n)
-                if side == 0:
-                    loc = (cx + off, cy - span * 0.28, z)
-                elif side == 1:
-                    loc = (cx + off, cy + span * 0.28, z)
-                elif side == 2:
-                    loc = (cx - span * 0.28, cy + off, z)
-                else:
-                    loc = (cx + span * 0.28, cy + off, z)
-                tiles.append(box(f"TowerTile{side}_{r}_{k}", loc, (span / n * 0.9, 0.12, 0.03), c, mats["roof"], rot=rot))
-    join_named("TowerTiles", tiles)
+    pyramid_shingles("TowerTiles", cx, cy, hat_z - 0.7, 1.4, 1.08, c, mats["roof"])
     cyl("Spire", (cx, cy, hat_z + 0.92), 0.026, 0.7, c, mats["chimney"], segs=10)
     ico("Finial", (cx, cy, hat_z + 1.28), 0.042, c, mats["bezel"])
     box("VaneArm", (cx, cy, hat_z + 1.38), (0.22, 0.028, 0.028), c, mats["chimney"])
