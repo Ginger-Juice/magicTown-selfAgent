@@ -3,9 +3,16 @@ import { defineTool } from "./registry";
 import { asList, fail, ok, recall, recordKey, remember } from "./lib";
 import { formatReadingArchive, uniqueReadingKey } from "../divination";
 import {
+  coachingPack,
+  findMajorCard,
+  findSpread,
+  isPlateQuery,
+  majorArcanaPack,
+  platePack,
+} from "../knowledge";
+import {
   DISHES,
   RECIPES,
-  TAROT_MAJOR,
   TAROT_RANKS,
   TAROT_SUITS,
   findDish,
@@ -82,13 +89,30 @@ const logMeal = defineTool({
 
 const lookupDish = defineTool({
   id: "lookup_dish",
-  description: "查一道菜的粗略营养值。只认镇上那本小册子里的条目，查不到就说查不到。",
-  parameters: z.object({ dish: z.string().min(1).max(80) }),
+  description:
+    "查一道菜的粗略营养值，或健康餐盘原则（topic 填 plate）。只认镇上那本小册子，查不到就说查不到。",
+  parameters: z.object({
+    dish: z.string().min(1).max(80).optional().describe("菜名。查营养时填写"),
+    topic: z.enum(["plate"]).optional().describe("填 plate 时返回健康餐盘原则，可以不传菜名"),
+  }),
   async execute(args) {
-    const hit = findDish(args.dish);
+    const plateQuery = args.dish ? isPlateQuery(args.dish) : false;
+    const wantPlate = args.topic === "plate" || plateQuery;
+    const dishQuery = args.dish && !plateQuery ? args.dish : undefined;
+    if (!dishQuery && !wantPlate) {
+      return fail("invalid_arguments", { detail: ["dish or topic=plate is required"] });
+    }
+
+    const knowledge = wantPlate ? platePack : undefined;
+    if (!dishQuery) return ok({ topic: "plate", knowledge });
+
+    const hit = findDish(dishQuery);
     if (!hit) {
+      if (knowledge) {
+        return ok({ topic: "plate", dish: { error: "not_found", query: dishQuery }, knowledge });
+      }
       return fail("not_found", {
-        query: args.dish,
+        query: dishQuery,
         known: DISHES.map((d) => d.name),
       });
     }
@@ -96,6 +120,7 @@ const lookupDish = defineTool({
       name: hit.name,
       per100g: { kcal: hit.kcal, protein: hit.protein, carbs: hit.carbs, fat: hit.fat },
       note: hit.note ?? null,
+      ...(knowledge ? { knowledge } : {}),
     });
   },
 });
@@ -133,7 +158,7 @@ const logWorkout = defineTool({
 
 const suggestPlan = defineTool({
   id: "suggest_plan",
-  description: "根据访客最近记录的训练，给出下一周的分配建议。不下医疗判断。",
+  description: "根据访客最近记录的训练，给出下一周的分配，并附上新手力量原则。不下医疗判断。",
   parameters: z.object({
     goal: z.string().max(80).optional(),
     daysPerWeek: z.number().int().min(1).max(7).optional(),
@@ -153,6 +178,7 @@ const suggestPlan = defineTool({
       split: { strength, cardio, mobility },
       recentActivities: asList(history, 5).map((r) => r.value),
       caution: "有疼痛或旧伤先就医，这里不开康复处方。",
+      knowledge: coachingPack,
     });
   },
 });
@@ -358,7 +384,7 @@ const logProgress = defineTool({
 // ---------------------------------------------------------------------------
 
 function fullDeck() {
-  const major = TAROT_MAJOR.map((c) => ({ name: `${c.name}`, arcana: "大阿卡纳" as const }));
+  const major = majorArcanaPack.cards.map((c) => ({ name: c.name, arcana: "大阿卡纳" as const }));
   const minor = TAROT_SUITS.flatMap((s) =>
     TAROT_RANKS.map((r) => ({ name: `${s.suit}${r}`, arcana: "小阿卡纳" as const })),
   );
@@ -392,13 +418,29 @@ const drawTarot = defineTool({
 
 const lookupCard = defineTool({
   id: "lookup_card",
-  description: "查一张大阿卡纳的常见含义。小阿卡纳只返回花色主题。",
+  description:
+    "查一张大阿卡纳的关键词，或一个牌阵的位置。词条来自镇上的大阿卡纳小册子。小阿卡纳只返回花色主题。",
   parameters: z.object({ name: z.string().min(1).max(30) }),
   async execute(args) {
     const q = normalize(args.name);
-    const major = TAROT_MAJOR.find((c) => normalize(c.name) === q || normalize(c.name).includes(q));
+    const major = findMajorCard(args.name);
     if (major) {
-      return ok({ arcana: "大阿卡纳", name: major.name, upright: major.upright, reversed: major.reversed });
+      return ok({
+        arcana: "大阿卡纳",
+        id: major.id,
+        name: major.name,
+        upright: [...major.upright],
+        reversed: [...major.reversed],
+      });
+    }
+    const spread = findSpread(args.name);
+    if (spread) {
+      return ok({
+        spread: spread.name,
+        id: spread.id,
+        positions: [...spread.positions],
+        voiceRules: [...majorArcanaPack.voice_rules],
+      });
     }
     const suit = TAROT_SUITS.find((s) => q.includes(normalize(s.suit)));
     if (suit) return ok({ arcana: "小阿卡纳", suit: suit.suit, theme: suit.theme });
