@@ -128,6 +128,37 @@ describe("lookup tools", () => {
     const outcome = await registry.get("lookup_card")!.execute({ name: "圣杯三" }, ctx);
     expect(outcome.data).toMatchObject({ arcana: "小阿卡纳", suit: "圣杯" });
   });
+
+  it("returns major-arcana keywords from the knowledge pack", async () => {
+    const outcome = await registry.get("lookup_card")!.execute({ name: "愚者" }, ctx);
+    expect(outcome.data).toMatchObject({
+      arcana: "大阿卡纳",
+      id: "0",
+      name: "愚者",
+      upright: ["开始", "天真", "自发", "自由", "信任"],
+      reversed: ["鲁莽", "幼稚", "停滞", "不负责任"],
+    });
+  });
+
+  it("returns spread positions from the knowledge pack", async () => {
+    const outcome = await registry.get("lookup_card")!.execute({ name: "三张" }, ctx);
+    expect(outcome.data).toMatchObject({
+      spread: "三牌",
+      id: "three",
+      positions: ["过去", "现在", "走向"],
+    });
+  });
+
+  it("returns the healthy-plate pack when asked for the plate", async () => {
+    const outcome = await registry.get("lookup_dish")!.execute({ topic: "plate" }, ctx);
+    const data = outcome.data as {
+      topic: string;
+      knowledge: { framework: { plate: { notes: string }[] }; coaching_moves: string[] };
+    };
+    expect(data.topic).toBe("plate");
+    expect(data.knowledge.framework.plate.some((slice) => slice.notes.includes("土豆"))).toBe(true);
+    expect(data.knowledge.coaching_moves.length).toBeGreaterThan(0);
+  });
 });
 
 describe("slugFor", () => {

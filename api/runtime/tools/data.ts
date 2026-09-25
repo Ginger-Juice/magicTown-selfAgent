@@ -124,31 +124,6 @@ export const RECIPES: Recipe[] = [
   },
 ];
 
-export const TAROT_MAJOR = [
-  { n: 0, name: "愚者", upright: "起步、天真、放手一搏", reversed: "鲁莽、逃避、准备不足" },
-  { n: 1, name: "魔术师", upright: "资源到位、主动、创造", reversed: "空谈、操弄、力气用错地方" },
-  { n: 2, name: "女祭司", upright: "直觉、静观、尚未揭晓", reversed: "忽视内心、秘密外泄" },
-  { n: 3, name: "皇后", upright: "滋养、丰盛、感官", reversed: "过度依赖、停滞" },
-  { n: 4, name: "皇帝", upright: "秩序、边界、掌控", reversed: "僵硬、专断" },
-  { n: 5, name: "教皇", upright: "传统、指导、体系", reversed: "教条、反叛" },
-  { n: 6, name: "恋人", upright: "选择、结合、价值排序", reversed: "犹疑、失衡" },
-  { n: 7, name: "战车", upright: "推进、意志、方向感", reversed: "失控、方向不明" },
-  { n: 8, name: "力量", upright: "温柔的坚持、驯服", reversed: "自我怀疑、耗竭" },
-  { n: 9, name: "隐士", upright: "独处、寻找答案、内省", reversed: "孤立、拒绝求助" },
-  { n: 10, name: "命运之轮", upright: "转机、周期、时机", reversed: "阻滞、重复旧局" },
-  { n: 11, name: "正义", upright: "权衡、因果、公正", reversed: "偏颇、逃避责任" },
-  { n: 12, name: "倒吊人", upright: "换个角度、暂停、交付", reversed: "无谓牺牲、拖延" },
-  { n: 13, name: "死神", upright: "结束与转化、清理", reversed: "抗拒改变、悬而未决" },
-  { n: 14, name: "节制", upright: "调和、耐心、比例", reversed: "过度、失衡" },
-  { n: 15, name: "恶魔", upright: "执着、诱惑、被绑住", reversed: "松绑、看清依赖" },
-  { n: 16, name: "高塔", upright: "突变、旧结构崩塌", reversed: "延后的崩塌、勉强维持" },
-  { n: 17, name: "星星", upright: "希望、疗愈、指引", reversed: "失望、信心动摇" },
-  { n: 18, name: "月亮", upright: "迷雾、不安、潜意识", reversed: "拨云见月、误会澄清" },
-  { n: 19, name: "太阳", upright: "明朗、活力、被看见", reversed: "短暂的阴天、过度乐观" },
-  { n: 20, name: "审判", upright: "召唤、清算、重新出发", reversed: "自责、听不见召唤" },
-  { n: 21, name: "世界", upright: "完成、整合、圆满", reversed: "差一步、收尾乏力" },
-] as const;
-
 export const TAROT_SUITS = [
   { suit: "权杖", theme: "行动与热情" },
   { suit: "圣杯", theme: "情感与关系" },

@@ -2,7 +2,15 @@ import { eq } from "drizzle-orm";
 import { agents } from "@db/schema";
 import { getDb } from "../queries/connection";
 import { RuntimeError } from "./errors";
-import { AGENT_KINDS, type AgentDefinition, type AgentKind, type MemorySlot, type ProviderId } from "./types";
+import { KIND_SKILLS } from "./skills/presets";
+import {
+  AGENT_KINDS,
+  type AgentDefinition,
+  type AgentKind,
+  type MemorySlot,
+  type ProviderId,
+  type Skill,
+} from "./types";
 
 export { AGENT_KINDS };
 export type { AgentKind };
@@ -14,6 +22,8 @@ export type KindPreset = {
   memorySlots: MemorySlot[];
   /** Seeded self-L1 rows: the ethical floor for this trade. */
   selfCanon: string[];
+  /** How-to playbooks. Empty until a kind has one. Facts stay in knowledge packs. */
+  skills: Skill[];
   defaultProvider: ProviderId;
 };
 
@@ -25,6 +35,7 @@ export const KIND_PRESETS: Record<AgentKind, KindPreset> = {
     toolIds: ["add_task", "list_tasks"],
     memorySlots: [{ key: "profile:work_rhythm", desc: "作息与专注时段", topics: "work" }],
     selfCanon: [],
+    skills: KIND_SKILLS.work,
     defaultProvider: "builtin",
   },
 
@@ -37,6 +48,7 @@ export const KIND_PRESETS: Record<AgentKind, KindPreset> = {
       { key: "profile:diet_goal", desc: "当前饮食目标", topics: "health,diet" },
     ],
     selfCanon: ["不做医疗诊断，涉及病情一律建议就医。"],
+    skills: KIND_SKILLS.diet,
     defaultProvider: "builtin",
   },
 
@@ -48,6 +60,7 @@ export const KIND_PRESETS: Record<AgentKind, KindPreset> = {
       { key: "profile:fitness_goal", desc: "当前训练目标", topics: "health,fitness" },
     ],
     selfCanon: ["有伤病史或疼痛时先建议就医，不开康复处方。"],
+    skills: KIND_SKILLS.fitness,
     defaultProvider: "builtin",
   },
 
@@ -56,6 +69,7 @@ export const KIND_PRESETS: Record<AgentKind, KindPreset> = {
     toolIds: ["save_snippet"],
     memorySlots: NO_SLOTS,
     selfCanon: [],
+    skills: KIND_SKILLS.code,
     // Falls back to builtin until a per-agent Cursor key exists.
     defaultProvider: "cursor",
   },
@@ -71,6 +85,7 @@ export const KIND_PRESETS: Record<AgentKind, KindPreset> = {
       "自己不办事，只把访客引荐给对的人。",
       "不接健康与代码相关的请求，遇到就转给对应的镇民。",
     ],
+    skills: KIND_SKILLS.social,
     defaultProvider: "builtin",
   },
 
@@ -82,6 +97,7 @@ export const KIND_PRESETS: Record<AgentKind, KindPreset> = {
       "涉及用药、孕期、病史一律先问营养巫师或建议就医，不自行判断。",
       "访客表示不饮酒时只推荐无酒精配方。",
     ],
+    skills: KIND_SKILLS.mixology,
     defaultProvider: "builtin",
   },
 
@@ -90,6 +106,7 @@ export const KIND_PRESETS: Record<AgentKind, KindPreset> = {
     toolIds: ["search_library", "make_reading_plan", "log_progress"],
     memorySlots: [{ key: "profile:study_goal", desc: "当前研究或学习目标", topics: "study,research" }],
     selfCanon: [],
+    skills: KIND_SKILLS.study,
     defaultProvider: "builtin",
   },
 
@@ -102,6 +119,7 @@ export const KIND_PRESETS: Record<AgentKind, KindPreset> = {
       "不提供医疗、法律、财务建议，一律转介给对应的镇民。",
       "占卜是消遣，不把结果说成事实。",
     ],
+    skills: KIND_SKILLS.divination,
     defaultProvider: "builtin",
   },
 
@@ -113,6 +131,7 @@ export const KIND_PRESETS: Record<AgentKind, KindPreset> = {
       { key: "pref:tone", desc: "希望的说话方式", topics: "" },
     ],
     selfCanon: [],
+    skills: KIND_SKILLS.custom,
     defaultProvider: "builtin",
   },
 };
@@ -178,7 +197,10 @@ export function toDefinition(row: typeof agents.$inferSelect): AgentDefinition {
     name: row.name,
     persona: row.persona,
     landmarkId: row.landmarkId,
-    skills: [],
+    // Kind playbooks. There is no agents.skills column yet; an empty row still
+    // gets the preset. providerOptions.skills is a Cursor skill-file seed
+    // ({ name, body }), not this list.
+    skills: preset.skills,
     toolIds: declaredTools.length ? declaredTools : preset.toolIds,
     provider: resolveProvider(row, preset, providerOptions),
     providerOptions,
